@@ -14,7 +14,7 @@ UI: {
 	SplashTitle: This is your menu
 	Splash1: It starts as regular tModLoader. Everything you change is optional.
 	Splash2: The circle between the menu buttons and Switch Menu Theme opens wallpapers, music, logo, widgets, and layout.
-	Splash3: Add a music player, clock, greeting, or moon phase. One tap hides version clutter. Drag, resize, or hide any element.
+	Splash3: Add a music player, clock, greeting, moon phase, or Discord server. One tap hides version clutter. Drag, resize, or hide any element.
 	GotIt: Got it
 	DontShow: Don't show this again
 	SaveLayout: Save layout
@@ -79,12 +79,26 @@ UI: {
 	AddClock: Clock
 	AddQuote: Greeting / quote
 	AddMoon: Moon phase
+	AddDiscord: Discord server
 	OpenQuotes: Edit quotes
 	Clock24h: 24-hour time
 	Clock12h: 12-hour time
 	ClockAnalog: Analog
 	ClockDigital: Digital
 	ClockDate: Show date
+	DiscordHint1: Developer Mode → right-click the server → Copy Server ID
+	DiscordHint2: Server Settings → Widget → enable Server Widget
+	DiscordStyleCompact: Compact card
+	DiscordStyleBanner: Wide banner
+	DiscordStyleRoster: Member list
+	DiscordJoin: Join Voice
+	DiscordOnline: "{0} online"
+	DiscordLoading: Loading…
+	DiscordNeedWidget: Enable Server Widget in Discord
+	DiscordBadId: Check the server ID
+	DiscordNetError: Can't reach Discord
+	DiscordEmpty: Paste a server ID
+	DiscordChangeId: Change server ID
 	GreetingMorning: Good morning
 	GreetingAfternoon: Good afternoon
 	GreetingEvening: Good evening
@@ -110,6 +124,7 @@ UI: {
 	Layer_widget_clock: Clock
 	Layer_widget_quote: Greeting
 	Layer_widget_moon: Moon
+	Layer_widget_discord: Discord
 	CaptionColor: Title bar color
 	BorderColor: Border color
 	TitleTextColor: Title text color
@@ -130,6 +145,7 @@ UI: {
 	ToastReset: Reset to vanilla
 	ToastWidgetOn: Widget added
 	ToastWidgetOff: Widget removed
+	ToastDiscordId: Paste the server ID in discord.txt, then click Discord again
 	ToastTrackDeleted: Track removed
 	ToastCleanOn: Version clutter hidden
 	ToastCleanOff: Version clutter restored

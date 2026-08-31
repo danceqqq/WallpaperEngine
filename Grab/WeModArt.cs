@@ -5,7 +5,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using Terraria;
+using Terraria.Graphics.Effects;
 using Terraria.ModLoader;
+using WallpaperEngine.UI;
 
 namespace WallpaperEngine.Grab
 {
@@ -15,11 +17,18 @@ namespace WallpaperEngine.Grab
 		private static readonly Dictionary<string, string[]> FilesByMod = new(StringComparer.Ordinal);
 		private static readonly HashSet<string> Missing = new(StringComparer.Ordinal);
 
+		private static FieldInfo _menuField;
+		private static FieldInfo _riftIntensity;
+		private static readonly Color RiftTop = new(27, 27, 39);
+		private static readonly Color RiftBottom = new(229, 44, 43);
+
 		internal static void Unload()
 		{
 			Assets.Clear();
 			FilesByMod.Clear();
 			Missing.Clear();
+			_menuField = null;
+			_riftIntensity = null;
 		}
 
 		internal static bool SkipMenu(ModMenu menu)
@@ -56,10 +65,11 @@ namespace WallpaperEngine.Grab
 				return;
 
 			try {
-				if (RiftSkyInstance() is not Terraria.Graphics.Effects.CustomSky sky)
+				if (RiftSkyInstance() is not CustomSky sky)
 					return;
 				sky.Activate(Vector2.Zero);
 				sky.Update(new GameTime());
+				SetRiftIntensity(1f);
 			}
 			catch {
 			}
@@ -67,20 +77,78 @@ namespace WallpaperEngine.Grab
 
 		internal static bool TryDrawHostSky(SpriteBatch spriteBatch, ModMenu menu)
 		{
-			if (menu == null || !HasHostSky(menu))
+			if (menu == null || !HasHostSky(menu) || spriteBatch == null)
 				return false;
 
-			try {
-				object target = RiftSkyTarget();
-				MethodInfo render = target?.GetType().GetMethod("Render", new[] { typeof(Color) });
-				if (render == null)
-					return false;
+			WeDraw.DrawVerticalGradient(spriteBatch, WeDraw.CoverRect, RiftTop, RiftBottom, 1f);
 
-				render.Invoke(target, new object[] { Color.White });
+			object saved = null;
+			bool swapped = false;
+			try {
+				FieldInfo current = MenuField();
+				if (current != null) {
+					saved = current.GetValue(null);
+					current.SetValue(null, menu);
+					swapped = true;
+				}
+
+				SetRiftIntensity(1f);
+				try {
+					spriteBatch.End();
+				}
+				catch {
+				}
+
+				try {
+					spriteBatch.Begin();
+				}
+				catch {
+				}
+
+				if (RiftSkyInstance() is CustomSky sky) {
+					sky.Activate(Vector2.Zero);
+					sky.Draw(spriteBatch, 0f, 10f);
+				}
+				else {
+					object target = RiftSkyTarget();
+					MethodInfo render = target?.GetType().GetMethod("Render", new[] { typeof(Color) });
+					render?.Invoke(target, new object[] { Color.White });
+				}
+
 				return true;
 			}
 			catch {
-				return false;
+				return true;
+			}
+			finally {
+				if (swapped) {
+					try {
+						MenuField()?.SetValue(null, saved);
+					}
+					catch {
+					}
+				}
+			}
+		}
+
+		private static FieldInfo MenuField() =>
+			_menuField ??= typeof(MenuLoader).GetField(
+				"currentMenu",
+				BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+		private static void SetRiftIntensity(float value)
+		{
+			try {
+				if (_riftIntensity == null) {
+					if (!ModLoader.TryGetMod("NoxusBoss", out Mod wotg) || wotg.Code == null)
+						return;
+					Type skyType = wotg.Code.GetType("NoxusBoss.Content.NPCs.Bosses.Avatar.SpecificEffectManagers.AvatarRiftSky");
+					_riftIntensity = skyType?.GetField("intensity", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+				}
+
+				_riftIntensity?.SetValue(null, value);
+			}
+			catch {
 			}
 		}
 

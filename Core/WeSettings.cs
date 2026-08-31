@@ -303,6 +303,18 @@ namespace WallpaperEngine.Core
 			WeSave.Save();
 		}
 
+		internal static void SetDiscordWidget(bool enabled)
+		{
+			Current.DiscordWidget = enabled;
+			WeSave.Save();
+		}
+
+		internal static void SetDiscordStyle(int style)
+		{
+			Current.DiscordStyle = Math.Clamp(style, 0, 2);
+			WeSave.Save();
+		}
+
 		internal static void SetWrenchStyle(int style)
 		{
 			style = Math.Clamp(style, 0, 1);
@@ -351,6 +363,8 @@ namespace WallpaperEngine.Core
 			Current.ClockWidget = false;
 			Current.QuoteWidget = false;
 			Current.MoonWidget = false;
+			Current.DiscordWidget = false;
+			Current.DiscordStyle = 0;
 			Current.CleanChrome = false;
 			Current.WrenchStyle = 0;
 			Current.Layers.Clear();

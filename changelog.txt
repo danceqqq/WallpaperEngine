@@ -1,3 +1,8 @@
+v0.6
+- Borrowed Catalyst logos use Terraria's own logo bounce (rotation + scale) instead of sitting still
+- Wrath of the Gods "The Insouciant" wallpaper draws the live carmine rift sky (not vanilla night). Scoped menu swap is restored every frame
+- Discord server widget: first enable asks for a server ID (discord.txt, with a short how-to). Compact / banner / member-list styles. Glowing gear on the live widget and in the widgets panel to change the ID. Uses Discord's public widget JSON — enable Server Widget in Discord; inbox-style messages need a bot and are not included
+
 v0.5
 - Client settings can switch the customize hub between the circle and a sliding iOS-style bar (live previews in the panel)
 - Menu buttons: visuals and hitboxes stay together after moving them (DrawBorderStringBig path + remap only when the text actually shifted). Thanks Glorp for the report

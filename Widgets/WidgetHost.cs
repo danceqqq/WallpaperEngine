@@ -7,7 +7,7 @@ namespace WallpaperEngine.Widgets
 {
 	internal static class WidgetHost
 	{
-		internal static bool Busy => WePlayerUI.Busy;
+		internal static bool Busy => WePlayerUI.Busy || DiscordWidget.Busy;
 
 		internal static void Update()
 		{
@@ -15,6 +15,7 @@ namespace WallpaperEngine.Widgets
 				return;
 			WePlayerUI.Update();
 			QuoteWidget.Refresh();
+			DiscordFeed.Tick();
 		}
 
 		internal static void HandleInput()
@@ -22,6 +23,7 @@ namespace WallpaperEngine.Widgets
 			if (!WeModMenu.OnTitle)
 				return;
 			WePlayerUI.HandleInput();
+			DiscordWidget.HandleInput();
 		}
 
 		internal static void Draw(SpriteBatch spriteBatch, float fade)
@@ -30,6 +32,7 @@ namespace WallpaperEngine.Widgets
 			ClockWidget.Draw(spriteBatch, fade);
 			QuoteWidget.Draw(spriteBatch, fade);
 			MoonWidget.Draw(spriteBatch, fade);
+			DiscordWidget.Draw(spriteBatch, fade);
 		}
 	}
 }

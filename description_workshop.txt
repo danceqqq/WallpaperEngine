@@ -12,7 +12,7 @@ Logo and wallpaper are independent. You can take a logo from one mod menu and a 
 [*] Borrow skies and logos from other loaded menu themes (Calamity, Infernum, Fables, Wrath of the Gods, Catalyst, and others)
 [*] Layer images and effects (stars, fog, rain, beat pulse, and more)
 [*] Music player with custom ogg/mp3/wav, shuffle, loop, and a delete button per track
-[*] Clock, greeting, and moon-phase widgets
+[*] Clock, greeting, moon-phase, and Discord server widgets
 [*] Drag, scale, or hide title-screen elements
 [*] Recolor the tModLoader window caption and border, and pick circle or bar style for the customize hub (client)
 [/list]

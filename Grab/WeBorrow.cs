@@ -42,11 +42,10 @@ namespace WallpaperEngine.Grab
 			bool painted = false;
 			try {
 				WeModArt.PrimeLiveSky(menu);
-				if (offer.UseThemeFx)
-					painted |= WeBorrowFx.TryRunSky(spriteBatch, id);
-
 				if (WeModArt.HasHostSky(menu))
-					painted |= WeModArt.TryDrawHostSky(spriteBatch, menu);
+					painted = WeModArt.TryDrawHostSky(spriteBatch, menu);
+				else if (offer.UseThemeFx)
+					painted |= WeBorrowFx.TryRunSky(spriteBatch, id);
 
 				if (!painted && offer.UseStyle)
 					painted = DrawStyle(spriteBatch, id, WeCatalog.StyleOf(id));
@@ -64,7 +63,7 @@ namespace WallpaperEngine.Grab
 			return painted;
 		}
 
-		internal static bool TryDrawLogo(SpriteBatch spriteBatch, Vector2 anchor, float layoutScale, float fade)
+		internal static bool TryDrawLogo(SpriteBatch spriteBatch, Vector2 anchor, float layoutScale, float fade, float rotation, float bounce)
 		{
 			if (_drawing || spriteBatch == null)
 				return false;
@@ -78,7 +77,7 @@ namespace WallpaperEngine.Grab
 			_drawing = true;
 			bool drew;
 			try {
-				drew = WeBorrowFx.TryRunLogo(spriteBatch, id, anchor, layoutScale, fade);
+				drew = WeBorrowFx.TryRunLogo(spriteBatch, id, anchor, layoutScale, fade, rotation, bounce);
 			}
 			catch {
 				drew = false;

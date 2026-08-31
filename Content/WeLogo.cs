@@ -48,29 +48,30 @@ namespace WallpaperEngine.Content
 			return cap / Math.Max(1, tex.Width) * Scale;
 		}
 
-		internal static void DrawCustom(SpriteBatch spriteBatch, float fade)
+		internal static void DrawCustom(SpriteBatch spriteBatch, float fade, float rotation, float bounce)
 		{
 			if (!SceneGraph.Visible(SceneGraph.Logo))
 				return;
 
+			bounce = MathHelper.Clamp(bounce, 0.5f, 1.6f);
 			if (WeSave.Data.Logo == LogoKind.Borrowed &&
-			    WeBorrow.TryDrawLogo(spriteBatch, Anchor, Scale, fade))
+			    WeBorrow.TryDrawLogo(spriteBatch, Anchor, Scale, fade, rotation, bounce))
 				return;
 
 			Texture2D tex = CurrentTexture();
 			if (tex == null)
 				return;
 
-			float scale = DrawScale(tex);
+			float scale = DrawScale(tex) * bounce;
 			if (WeSave.Data.Logo == LogoKind.Borrowed) {
 				WeDraw.WithPoint(spriteBatch, () => {
-					spriteBatch.Draw(tex, Anchor, null, Color.White * fade, 0f, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+					spriteBatch.Draw(tex, Anchor, null, Color.White * fade, rotation, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
 				});
 				return;
 			}
 
 			WeDraw.WithLinear(spriteBatch, () => {
-				spriteBatch.Draw(tex, Anchor, null, Color.White * fade, 0f, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+				spriteBatch.Draw(tex, Anchor, null, Color.White * fade, rotation, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
 			});
 		}
 

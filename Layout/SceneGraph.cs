@@ -25,10 +25,11 @@ namespace WallpaperEngine.Layout
 		internal const string Clock = "widget.clock";
 		internal const string Quote = "widget.quote";
 		internal const string Moon = "widget.moon";
+		internal const string Discord = "widget.discord";
 
 		internal static readonly string[] Ids =
 		{
-			Logo, MenuButtons, ThemeSwap, SocialTerraria, SocialTml, Version, News, SunMoon, Wrench, Player, Clock, Quote, Moon
+			Logo, MenuButtons, ThemeSwap, SocialTerraria, SocialTml, Version, News, SunMoon, Wrench, Player, Clock, Quote, Moon, Discord
 		};
 
 		internal static void EnsureRecords(WeSaveData data)
@@ -61,6 +62,8 @@ namespace WallpaperEngine.Layout
 			if (id == Quote && !WeSave.Data.QuoteWidget)
 				return false;
 			if (id == Moon && !WeSave.Data.MoonWidget)
+				return false;
+			if (id == Discord && !WeSave.Data.DiscordWidget)
 				return false;
 			if (!LayoutEditor.Editing && WeSave.Data.CleanChrome && IsClutter(id))
 				return false;
@@ -112,6 +115,7 @@ namespace WallpaperEngine.Layout
 				Clock => new Vector2(w - 150f, 72f),
 				Quote => new Vector2(48f + 160f, h * 0.42f),
 				Moon => new Vector2(72f, 88f),
+				Discord => new Vector2(170f, 220f),
 				_ => new Vector2(w * 0.5f, h * 0.5f)
 			};
 		}
@@ -148,6 +152,7 @@ namespace WallpaperEngine.Layout
 				Clock => ClockWidget.HitRect(),
 				Quote => QuoteWidget.HitRect(),
 				Moon => MoonWidget.HitRect(),
+				Discord => DiscordWidget.HitRect(),
 				ThemeSwap => Around(pos, 220, 28),
 				SocialTml => Around(pos, 140, 28),
 				SocialTerraria => Around(pos, 140, 28),

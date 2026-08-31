@@ -34,6 +34,8 @@ namespace WallpaperEngine.Grab
 		private static Vector2 _anchor;
 		private static float _layout = 1f;
 		private static float _fade = 1f;
+		private static float _logoRot;
+		private static float _logoBounce = 1f;
 
 		internal static void Load()
 		{
@@ -81,15 +83,15 @@ namespace WallpaperEngine.Grab
 		}
 
 		internal static bool TryRunSky(SpriteBatch spriteBatch, string id) =>
-			Run(spriteBatch, id, Pass.Sky, new Vector2(Main.screenWidth * 0.5f, 100f), 1f, 1f);
+			Run(spriteBatch, id, Pass.Sky, new Vector2(Main.screenWidth * 0.5f, 100f), 1f, 1f, 0f, 1f);
 
-		internal static bool TryRunLogo(SpriteBatch spriteBatch, string id, Vector2 anchor, float layoutScale, float fade)
+		internal static bool TryRunLogo(SpriteBatch spriteBatch, string id, Vector2 anchor, float layoutScale, float fade, float rotation, float bounce)
 		{
-			if (!Run(spriteBatch, id, Pass.Logo, anchor, layoutScale, fade))
+			if (!Run(spriteBatch, id, Pass.Logo, anchor, layoutScale, fade, rotation, bounce))
 				return false;
 			if (_painted && !_defaultLogo)
 				return true;
-			return BlitMenuLogo(spriteBatch, id, anchor, layoutScale, fade);
+			return BlitMenuLogo(spriteBatch, id, anchor, layoutScale, fade, rotation, bounce);
 		}
 
 		private static void TickMenu(ModMenu menu)
@@ -106,7 +108,7 @@ namespace WallpaperEngine.Grab
 			WeModArt.TickHostSky(menu);
 		}
 
-		private static bool Run(SpriteBatch spriteBatch, string id, Pass pass, Vector2 anchor, float layoutScale, float fade)
+		private static bool Run(SpriteBatch spriteBatch, string id, Pass pass, Vector2 anchor, float layoutScale, float fade, float rotation, float bounce)
 		{
 			Load();
 			ModMenu menu = WeCatalog.FindMenu(id);
@@ -119,6 +121,8 @@ namespace WallpaperEngine.Grab
 			_anchor = anchor;
 			_layout = Math.Max(0.05f, layoutScale);
 			_fade = MathHelper.Clamp(fade, 0f, 1f);
+			_logoRot = rotation;
+			_logoBounce = MathHelper.Clamp(bounce, 0.5f, 1.6f);
 			_painted = false;
 			_defaultLogo = true;
 			_pass = pass;
@@ -128,13 +132,13 @@ namespace WallpaperEngine.Grab
 			PushMenu(menu);
 			try {
 				Vector2 center = _vanillaCenter;
-				float rotation = 0f;
-				float scale = 1f;
+				float rot = _logoRot;
+				float scale = _logoBounce;
 				Color color = Color.White * _fade;
-				_defaultLogo = menu.PreDrawLogo(spriteBatch, ref center, ref rotation, ref scale, ref color);
+				_defaultLogo = menu.PreDrawLogo(spriteBatch, ref center, ref rot, ref scale, ref color);
 				if (pass == Pass.Logo) {
 					try {
-						menu.PostDrawLogo(spriteBatch, center, rotation, scale, color);
+						menu.PostDrawLogo(spriteBatch, center, rot, scale, color);
 					}
 					catch {
 					}
@@ -155,16 +159,16 @@ namespace WallpaperEngine.Grab
 			}
 		}
 
-		private static bool BlitMenuLogo(SpriteBatch spriteBatch, string id, Vector2 anchor, float layoutScale, float fade)
+		private static bool BlitMenuLogo(SpriteBatch spriteBatch, string id, Vector2 anchor, float layoutScale, float fade, float rotation, float bounce)
 		{
 			Texture2D tex = WeCatalog.LogoTexture(id);
 			if (tex == null || WeInspect.IsIcon(tex))
 				return _painted;
 
 			float cap = MathHelper.Min(520f, Main.screenWidth * 0.38f);
-			float scale = cap / Math.Max(1, tex.Width) * layoutScale;
+			float scale = cap / Math.Max(1, tex.Width) * layoutScale * MathHelper.Clamp(bounce, 0.5f, 1.6f);
 			WeDraw.WithPoint(spriteBatch, () => {
-				spriteBatch.Draw(tex, anchor, null, Color.White * fade, 0f, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+				spriteBatch.Draw(tex, anchor, null, Color.White * fade, rotation, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
 			});
 			return true;
 		}
@@ -308,6 +312,23 @@ namespace WallpaperEngine.Grab
 			return Vector2.Distance(at, _vanillaCenter) < 280f;
 		}
 
+		private static void StampBounce(ref float rot, ref Vector2 scale)
+		{
+			if (_pass != Pass.Logo || _logoBounce < 0.2f)
+				return;
+			if (Math.Abs(rot) > 0.002f)
+				return;
+			if (Math.Abs(scale.X - scale.Y) > 0.02f)
+				return;
+
+			float layout = Math.Max(0.05f, _layout);
+			if (Math.Abs(scale.X / layout - 1f) > 0.008f)
+				return;
+
+			rot = _logoRot;
+			scale *= _logoBounce;
+		}
+
 		private static void Remap(ref Vector2 pos, ref Vector2 scale)
 		{
 			pos = (pos - _vanillaCenter) * _layout + _anchor;
@@ -383,8 +404,10 @@ namespace WallpaperEngine.Grab
 		{
 			Vector2 sc = new(scale, scale);
 			Rectangle dest = Rectangle.Empty;
-			if (Allow(tex, ref pos, ref sc, ref dest, false, ref color))
+			if (Allow(tex, ref pos, ref sc, ref dest, false, ref color)) {
+				StampBounce(ref rot, ref sc);
 				orig(sb, tex, pos, src, color, rot, origin, sc.X, fx, depth);
+			}
 		}
 
 		private static void DrawVecScale2(
@@ -392,8 +415,10 @@ namespace WallpaperEngine.Grab
 			SpriteBatch sb, Texture2D tex, Vector2 pos, Rectangle? src, Color color, float rot, Vector2 origin, Vector2 scale, SpriteEffects fx, float depth)
 		{
 			Rectangle dest = Rectangle.Empty;
-			if (Allow(tex, ref pos, ref scale, ref dest, false, ref color))
+			if (Allow(tex, ref pos, ref scale, ref dest, false, ref color)) {
+				StampBounce(ref rot, ref scale);
 				orig(sb, tex, pos, src, color, rot, origin, scale, fx, depth);
+			}
 		}
 
 		private static void DrawRect(Action<SpriteBatch, Texture2D, Rectangle, Color> orig, SpriteBatch sb, Texture2D tex, Rectangle dest, Color color)

@@ -37,6 +37,7 @@ namespace WallpaperEngine.Content
 			WeModListLook.Unload();
 			WeArt.Unload();
 			WePlayerUI.Unload();
+			DiscordFeed.Unload();
 			WePlaylist.Unload();
 			WeDraw.Unload();
 			ClientChrome.Unload();

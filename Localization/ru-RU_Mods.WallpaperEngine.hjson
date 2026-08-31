@@ -14,7 +14,7 @@ UI: {
 	SplashTitle: Это твоё меню
 	Splash1: Сначала всё как в обычном tModLoader. Любое изменение — по желанию.
 	Splash2: Круг между кнопками меню и сменой темы открывает обои, музыку, лого, виджеты и расстановку.
-	Splash3: Плеер, часы, приветствие или фаза луны — как виджеты. Одним нажатием прячутся версии и соцсети. Любой элемент можно двигать, масштабировать или скрыть.
+	Splash3: Плеер, часы, приветствие, фаза луны или сервер Discord — как виджеты. Одним нажатием прячутся версии и соцсети. Любой элемент можно двигать, масштабировать или скрыть.
 	GotIt: Понятно
 	DontShow: Больше не показывать
 	SaveLayout: Сохранить
@@ -79,12 +79,26 @@ UI: {
 	AddClock: Часы
 	AddQuote: Приветствие / цитата
 	AddMoon: Фаза луны
+	AddDiscord: Сервер Discord
 	OpenQuotes: Редактировать цитаты
 	Clock24h: 24 часа
 	Clock12h: 12 часов
 	ClockAnalog: Аналоговые
 	ClockDigital: Цифровые
 	ClockDate: Показывать дату
+	DiscordHint1: Режим разработчика → ПКМ по серверу → Копировать ID сервера
+	DiscordHint2: Настройки сервера → Виджет → включи виджет сервера
+	DiscordStyleCompact: Компактная карточка
+	DiscordStyleBanner: Широкий баннер
+	DiscordStyleRoster: Список участников
+	DiscordJoin: В голос
+	DiscordOnline: "{0} в сети"
+	DiscordLoading: Загрузка…
+	DiscordNeedWidget: Включи виджет сервера в Discord
+	DiscordBadId: Проверь ID сервера
+	DiscordNetError: Discord недоступен
+	DiscordEmpty: Вставь ID сервера
+	DiscordChangeId: Сменить ID сервера
 	GreetingMorning: Доброе утро
 	GreetingAfternoon: Добрый день
 	GreetingEvening: Добрый вечер
@@ -110,6 +124,7 @@ UI: {
 	Layer_widget_clock: Часы
 	Layer_widget_quote: Приветствие
 	Layer_widget_moon: Луна
+	Layer_widget_discord: Discord
 	CaptionColor: Цвет заголовка окна
 	BorderColor: Цвет рамки
 	TitleTextColor: Цвет текста заголовка
@@ -130,6 +145,7 @@ UI: {
 	ToastReset: Возвращён ванильный вид
 	ToastWidgetOn: Виджет добавлен
 	ToastWidgetOff: Виджет убран
+	ToastDiscordId: Вставь ID сервера в discord.txt и снова нажми Discord
 	ToastTrackDeleted: Трек удалён
 	ToastCleanOn: Системный текст скрыт
 	ToastCleanOff: Системный текст возвращён

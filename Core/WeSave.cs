@@ -133,6 +133,9 @@ namespace WallpaperEngine.Core
 		public bool ClockWidget { get; set; }
 		public bool QuoteWidget { get; set; }
 		public bool MoonWidget { get; set; }
+		public bool DiscordWidget { get; set; }
+		public string DiscordGuildId { get; set; } = "";
+		public int DiscordStyle { get; set; }
 		public bool CleanChrome { get; set; }
 		public bool Clock24h { get; set; } = true;
 		public bool ClockAnalog { get; set; }
@@ -179,6 +182,7 @@ namespace WallpaperEngine.Core
 		internal static string WallpaperFolder => Path.Combine(RootFolder, "Wallpapers");
 		internal static string IconFolder => Path.Combine(RootFolder, "Icons");
 		internal static string QuotePath => Path.Combine(RootFolder, "quote.txt");
+		internal static string DiscordPath => Path.Combine(RootFolder, "discord.txt");
 		internal static string SettingsPath => Path.Combine(RootFolder, "settings.json");
 		internal static string PlayGuardPath => Path.Combine(RootFolder, "playing.lock");
 
@@ -229,6 +233,9 @@ namespace WallpaperEngine.Core
 			_data.LoopedTrackId ??= "";
 			_data.WindowIconFile ??= "";
 			_data.SelectedLayerId ??= "";
+			_data.DiscordGuildId ??= "";
+			if (_data.DiscordStyle < 0 || _data.DiscordStyle > 2)
+				_data.DiscordStyle = 0;
 			_data.WallpaperDim = Math.Clamp(_data.WallpaperDim, 0f, 1f);
 			_data.WallpaperVignette = Math.Clamp(_data.WallpaperVignette, 0f, 1f);
 			if ((int)_data.WallpaperFit < 0 || (int)_data.WallpaperFit > 2)

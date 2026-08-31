@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -11,11 +12,13 @@ namespace WallpaperEngine.Core
 	{
 		private static string _text = "";
 		private static float _life;
+		private static float _max = 2.4f;
 
-		internal static void Show(string key)
+		internal static void Show(string key, float life = 2.4f)
 		{
 			_text = WeText.UI(key);
-			_life = 2.4f;
+			_max = MathHelper.Max(0.8f, life);
+			_life = _max;
 		}
 
 		internal static void Update()
@@ -30,11 +33,17 @@ namespace WallpaperEngine.Core
 				return;
 
 			float alpha = MathHelper.Clamp(_life / 0.35f, 0f, 1f);
-			if (_life > 2f)
-				alpha = MathHelper.Clamp((2.4f - _life) / 0.25f, 0f, 1f);
+			if (_life > _max - 0.25f)
+				alpha = MathHelper.Clamp((_max - _life) / 0.25f, 0f, 1f);
 
 			var font = FontAssets.MouseText.Value;
+			float scale = 1f;
 			Vector2 size = font.MeasureString(_text);
+			float max = Math.Max(160f, Main.screenWidth - 80f);
+			if (size.X > max) {
+				scale = max / size.X;
+				size *= scale;
+			}
 			var rect = new Rectangle(
 				(int)((Main.screenWidth - size.X - 36) * 0.5f),
 				18,
@@ -50,7 +59,7 @@ namespace WallpaperEngine.Core
 				Color.White * alpha,
 				0f,
 				Vector2.Zero,
-				Vector2.One);
+				new Vector2(scale));
 		}
 	}
 }

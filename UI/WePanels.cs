@@ -393,6 +393,16 @@ namespace WallpaperEngine.UI
 
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("AddMoon"), WeSave.Data.MoonWidget);
 
+			DrawCard(spriteBatch, panel, ref y, WeText.UI("AddDiscord"), WeSave.Data.DiscordWidget);
+			if (WeSave.Data.DiscordWidget) {
+				DrawHint(spriteBatch, panel, ref y, WeText.UI("DiscordHint1"));
+				DrawHint(spriteBatch, panel, ref y, WeText.UI("DiscordHint2"));
+				DrawCard(spriteBatch, panel, ref y, WeText.UI("DiscordStyleCompact"), WeSave.Data.DiscordStyle == 0);
+				DrawCard(spriteBatch, panel, ref y, WeText.UI("DiscordStyleBanner"), WeSave.Data.DiscordStyle == 1);
+				DrawCard(spriteBatch, panel, ref y, WeText.UI("DiscordStyleRoster"), WeSave.Data.DiscordStyle == 2);
+				DrawDiscordGear(spriteBatch, panel, ref y);
+			}
+
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("BtnClean"), WeSave.Data.CleanChrome);
 			DrawHint(spriteBatch, panel, ref y, WeText.UI("HiddenLayers"));
 			foreach (WeElementRecord hidden in SceneGraph.Hidden())
@@ -447,6 +457,31 @@ namespace WallpaperEngine.UI
 			if (ClickCard(panel, ref y)) {
 				WeSettings.SetMoonWidget(!WeSave.Data.MoonWidget);
 				WeToast.Show(WeSave.Data.MoonWidget ? "ToastWidgetOn" : "ToastWidgetOff");
+			}
+
+			if (ClickCard(panel, ref y)) {
+				if (WeSave.Data.DiscordWidget) {
+					WeSettings.SetDiscordWidget(false);
+					WeToast.Show("ToastWidgetOff");
+				}
+				else if (DiscordWidget.TryEnable()) {
+					WeSettings.SetDiscordWidget(true);
+					DiscordFeed.RefreshNow();
+					WeToast.Show("ToastWidgetOn");
+				}
+			}
+
+			if (WeSave.Data.DiscordWidget) {
+				SkipHint(ref y);
+				SkipHint(ref y);
+				if (ClickCard(panel, ref y))
+					WeSettings.SetDiscordStyle(0);
+				if (ClickCard(panel, ref y))
+					WeSettings.SetDiscordStyle(1);
+				if (ClickCard(panel, ref y))
+					WeSettings.SetDiscordStyle(2);
+				if (ClickDiscordGear(panel, ref y))
+					DiscordWidget.OpenIdFile();
 			}
 
 			if (ClickCard(panel, ref y)) {
@@ -539,6 +574,44 @@ namespace WallpaperEngine.UI
 		{
 			Rectangle hit = Row(panel, y, 92);
 			y += 100;
+			return hit.Contains(Main.mouseX, Main.mouseY);
+		}
+
+		private static void DrawDiscordGear(SpriteBatch spriteBatch, Rectangle panel, ref int y)
+		{
+			Rectangle hit = Row(panel, y, 36);
+			bool hover = hit.Contains(Main.mouseX, Main.mouseY);
+			float pulse = (MathF.Sin(Main.GlobalTimeWrappedHourly * 3.4f) + 1f) * 0.5f;
+			Color fill = Color.Lerp(WeAccent.Deep, new Color(28, 30, 38), 1f - pulse) * ((hover ? 0.95f : 0.84f) * _fade);
+			Color border = Color.Lerp(WeAccent.Mid, WeAccent.Light, pulse) * _fade;
+			WeDraw.Fill(spriteBatch, hit, fill);
+			WeDraw.Border(spriteBatch, hit, border);
+			Texture2D gear = WeIcons.Get(WeIcons.Setting);
+			if (gear != null && !gear.IsDisposed) {
+				float size = 18f;
+				float scale = size / Math.Max(1, Math.Max(gear.Width, gear.Height));
+				Vector2 center = new(hit.X + 22, hit.Y + hit.Height * 0.5f);
+				if (hover || pulse > 0.35f) {
+					spriteBatch.Draw(
+						gear, center, null, WeAccent.Light * (0.28f * _fade),
+						0f, gear.Size() * 0.5f, scale * 1.25f, SpriteEffects.None, 0f);
+				}
+
+				spriteBatch.Draw(
+					gear, center, null, WeAccent.Icon(hover, true) * _fade,
+					0f, gear.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+			}
+
+			ChatManager.DrawColorCodedStringWithShadow(
+				spriteBatch, FontAssets.MouseText.Value, WeText.UI("DiscordChangeId"),
+				new Vector2(hit.X + 40, hit.Y + 8), Color.White * _fade, 0f, Vector2.Zero, new Vector2(0.82f));
+			y += 42;
+		}
+
+		private static bool ClickDiscordGear(Rectangle panel, ref int y)
+		{
+			Rectangle hit = Row(panel, y, 36);
+			y += 42;
 			return hit.Contains(Main.mouseX, Main.mouseY);
 		}
 

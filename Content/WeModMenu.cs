@@ -115,7 +115,7 @@ namespace WallpaperEngine.Content
 			if (WeSave.Data.Logo is LogoKind.Custom or LogoKind.Hidden or LogoKind.Borrowed || SceneGraph.Get(SceneGraph.Logo).Customized)
 			{
 				if (WeSave.Data.Logo != LogoKind.Hidden && SceneGraph.Visible(SceneGraph.Logo))
-					WeLogo.DrawCustom(spriteBatch, 1f);
+					WeLogo.DrawCustom(spriteBatch, 1f, logoRotation, logoScale);
 				return false;
 			}
 
