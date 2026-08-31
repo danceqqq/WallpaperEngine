@@ -75,12 +75,13 @@ namespace WallpaperEngine.UI
 			if (_frameInput)
 				return;
 			_frameInput = true;
+
+			bool pressed = Main.mouseLeft && !_mouseHeld;
+			_mouseHeld = Main.mouseLeft;
 			if (!IsOpen)
 				return;
 
 			Main.blockMouse = true;
-			bool pressed = Main.mouseLeft && !_mouseHeld;
-			_mouseHeld = Main.mouseLeft;
 			Rectangle panel = PanelRect();
 
 			int wheel = Mouse.GetState().ScrollWheelValue;

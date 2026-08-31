@@ -13,15 +13,14 @@ namespace WallpaperEngine.Chrome
 {
 	internal static class WrenchDock
 	{
-		private const float Slot = 54f;
-		private const float BarH = 52f;
-		private const float Pad = 16f;
-		private const float DipR = 30f;
-		private const float Tile = 44f;
-		private const float Lift = 28f;
+		private const float Slot = 52f;
+		private const float BarH = 50f;
+		private const float Pad = 14f;
+		private const float Tile = 40f;
+		private const float Lift = 26f;
 
 		private static float _focus;
-		private static float _open = 1f;
+		private static float _lift;
 		private static int _hover = -1;
 		private static bool _frameInput;
 		private static bool _mouseHeld;
@@ -34,23 +33,23 @@ namespace WallpaperEngine.Chrome
 		{
 			_hover = -1;
 			_focus = 0f;
-			_open = 1f;
+			_lift = 0f;
 		}
 
 		internal static void Update()
 		{
 			if (!WeModMenu.OnTitle) {
 				_hover = -1;
+				_lift = 0f;
 				return;
 			}
 
-			int target = _hover >= 0 ? _hover : WrenchHub.ActiveIndex();
-			if (target < 0)
-				target = (int)MathF.Round(_focus);
-			_focus = MathHelper.Lerp(_focus, target, 0.22f);
-			if (Math.Abs(_focus - target) < 0.01f)
-				_focus = target;
-			_open = MathHelper.Lerp(_open, 1f, 0.18f);
+			float target = _hover >= 0 ? 1f : 0f;
+			_lift = MathHelper.Lerp(_lift, target, 0.28f);
+			if (Math.Abs(_lift - target) < 0.012f)
+				_lift = target;
+			if (_hover >= 0)
+				_focus = MathHelper.Lerp(_focus, _hover, 0.32f);
 		}
 
 		internal static void HandleInput()
@@ -87,101 +86,83 @@ namespace WallpaperEngine.Chrome
 			if (!WeModMenu.OnTitle || !SceneGraph.Visible(SceneGraph.Wrench))
 				return;
 
-			WeDraw.WithLinear(spriteBatch, () => DrawBar(spriteBatch, BarBounds(), _focus, 1f, interactive: true));
+			WeDraw.WithLinear(spriteBatch, () => DrawBar(spriteBatch, BarBounds(), _focus, _lift, 1f, interactive: true));
 		}
 
 		internal static void DrawPreview(SpriteBatch spriteBatch, Rectangle dest, float fade, bool on)
 		{
-			var inner = new Rectangle(dest.X + 18, dest.Y + 18, dest.Width - 36, dest.Height - 36);
-			DrawBar(spriteBatch, inner, on ? 4.2f + MathF.Sin(Main.GlobalTimeWrappedHourly * 1.6f) * 0.35f : 2f, fade, interactive: false);
+			var inner = new Rectangle(dest.X + 16, dest.Y + 16, dest.Width - 32, dest.Height - 32);
+			float focus = on ? 4f : 2f;
+			float lift = on ? 0.55f + MathF.Sin(Main.GlobalTimeWrappedHourly * 2.2f) * 0.12f : 0f;
+			DrawBar(spriteBatch, inner, focus, lift, fade, interactive: false);
 		}
 
-		private static void DrawBar(SpriteBatch spriteBatch, Rectangle bounds, float focus, float fade, bool interactive)
+		private static void DrawBar(SpriteBatch spriteBatch, Rectangle bounds, float focus, float lift, float fade, bool interactive)
 		{
 			int n = WrenchHub.Actions.Length;
 			float slot = bounds.Width / (float)n;
-			float barTop = bounds.Y + Lift * (bounds.Height / (BarH + Lift + 10f));
-			float barH = Math.Max(22f, bounds.Height - (barTop - bounds.Y) - 6f);
+			float barH = Math.Max(22f, bounds.Height * (BarH / (BarH + Lift + 12f)));
+			float barTop = bounds.Bottom - barH - 4f;
 			var bar = new Rectangle(bounds.X, (int)barTop, bounds.Width, (int)barH);
-			float dipX = bar.X + slot * (focus + 0.5f);
-			float dipR = Math.Min(DipR * (bar.Height / BarH), slot * 0.48f);
-			Color fill = new Color(22, 24, 30) * (0.94f * fade);
-			DrawBarWithDip(spriteBatch, bar, dipX, dipR, fill);
-			WeDraw.Border(spriteBatch, bar, WeAccent.Mid * (0.55f * fade));
+			Color fill = new Color(24, 26, 32);
+			FillRound(spriteBatch, bar, bar.Height * 0.5f, fill * fade);
 
 			for (int i = 0; i < n; i++) {
-				float dist = Math.Abs(i - focus);
-				float pop = MathHelper.Clamp(1f - dist, 0f, 1f);
-				pop = pop * pop * (3f - 2f * pop);
-				Vector2 center = new(bar.X + slot * (i + 0.5f), bar.Center.Y - pop * Lift * (bar.Height / BarH));
-				float size = MathHelper.Lerp(bar.Height * 0.42f, Tile * (bar.Height / BarH), pop);
+				float pop = lift * Smooth(1f - Math.Abs(i - focus));
+				Vector2 rest = new(bar.X + slot * (i + 0.5f), bar.Center.Y);
+				Vector2 center = rest - new Vector2(0f, pop * Lift * (bar.Height / BarH));
+				float size = MathHelper.Lerp(bar.Height * 0.46f, Tile * (bar.Height / BarH), pop);
 				bool hot = interactive && i == _hover;
-				bool active = WrenchHub.IsOn(WrenchHub.Actions[i]);
-				if (pop > 0.12f)
-					DrawTile(spriteBatch, center, size, fade * MathHelper.Lerp(0.45f, 1f, pop), hot || active);
+
+				if (pop > 0.08f)
+					FillRound(
+						spriteBatch,
+						TileRect(center, size),
+						size * 0.28f,
+						Color.Lerp(fill, WeAccent.Deep, 0.65f) * (fade * pop));
 
 				Texture2D icon = WeIcons.Get(WrenchHub.IconName(WrenchHub.Actions[i]));
 				if (icon != null) {
-					float iconScale = (size * 0.72f) / Math.Max(1, Math.Max(icon.Width, icon.Height));
+					float iconScale = (size * 0.7f) / Math.Max(1, Math.Max(icon.Width, icon.Height));
 					spriteBatch.Draw(
-						icon, center, null, WeAccent.Icon(hot, active) * fade,
+						icon, center, null, WeAccent.Icon(hot, pop > 0.45f) * fade,
 						0f, icon.Size() * 0.5f, iconScale, SpriteEffects.None, 0f);
 				}
 
-				if (pop > 0.55f && interactive) {
+				if (interactive && pop > 0.72f && hot) {
 					string label = WeText.UI(WrenchHub.TipKey(WrenchHub.Actions[i]));
-					DrawLabel(spriteBatch, new Vector2(center.X, bar.Bottom - 7f), label, fade * pop);
+					DrawLabel(spriteBatch, new Vector2(center.X, center.Y - size * 0.5f - 12f), label, fade * pop);
 				}
 			}
 		}
 
-		private static void DrawBarWithDip(SpriteBatch spriteBatch, Rectangle bar, float dipX, float dipR, Color fill)
-		{
-			dipX = MathHelper.Clamp(dipX, bar.X + dipR + 8f, bar.Right - dipR - 8f);
-			int r = Math.Max(10, (int)(bar.Height * 0.42f));
-			FillRound(spriteBatch, new Rectangle(bar.X, bar.Y, Math.Max(8, (int)(dipX - dipR - bar.X)), bar.Height), r, fill);
-			FillRound(spriteBatch, new Rectangle((int)(dipX + dipR), bar.Y, Math.Max(8, (int)(bar.Right - dipX - dipR)), bar.Height), r, fill);
-			int under = Math.Max(8, bar.Height - (int)dipR + 2);
-			WeDraw.Fill(spriteBatch, new Rectangle((int)(dipX - dipR), bar.Bottom - under, (int)(dipR * 2f), under), fill);
-			Texture2D circle = WeDraw.Circle();
-			float cScale = dipR * 2f / circle.Width;
-			spriteBatch.Draw(circle, new Vector2(dipX - dipR, bar.Y + dipR), null, fill, 0f, circle.Size() * 0.5f, cScale, SpriteEffects.None, 0f);
-			spriteBatch.Draw(circle, new Vector2(dipX + dipR, bar.Y + dipR), null, fill, 0f, circle.Size() * 0.5f, cScale, SpriteEffects.None, 0f);
-		}
-
-		private static void DrawTile(SpriteBatch spriteBatch, Vector2 center, float size, float fade, bool on)
-		{
-			int s = Math.Max(16, (int)size);
-			var rect = new Rectangle((int)(center.X - s * 0.5f), (int)(center.Y - s * 0.5f), s, s);
-			Color fill = Color.Lerp(WeAccent.Deep, WeAccent.Mid, on ? 0.55f : 0.2f) * fade;
-			FillRound(spriteBatch, rect, s * 0.28f, fill);
-			WeDraw.Border(spriteBatch, rect, (on ? WeAccent.Light : WeAccent.Mid) * fade);
-		}
-
 		private static void DrawLabel(SpriteBatch spriteBatch, Vector2 center, string text, float fade)
 		{
-			if (string.IsNullOrEmpty(text) || fade < 0.2f)
+			if (string.IsNullOrEmpty(text) || fade < 0.25f)
 				return;
 
 			var font = FontAssets.MouseText.Value;
 			Vector2 size = font.MeasureString(text) * 0.62f;
 			var rect = new Rectangle(
-				(int)(center.X - size.X * 0.5f - 8f),
-				(int)(center.Y - size.Y * 0.5f - 3f),
-				(int)size.X + 16,
-				(int)size.Y + 6);
-			FillRound(spriteBatch, rect, 8f, new Color(18, 20, 26) * (0.92f * fade));
-			WeDraw.Border(spriteBatch, rect, WeAccent.Light * fade);
+				(int)(center.X - size.X * 0.5f - 9f),
+				(int)(center.Y - size.Y * 0.5f - 4f),
+				(int)size.X + 18,
+				(int)size.Y + 8);
+			FillRound(spriteBatch, rect, rect.Height * 0.5f, new Color(18, 20, 26) * fade);
 			ChatManager.DrawColorCodedStringWithShadow(
 				spriteBatch, font, text,
-				new Vector2(rect.X + 8, rect.Y + 3),
-				WeAccent.Light * fade, 0f, Vector2.Zero, new Vector2(0.62f));
+				new Vector2(rect.X + 9, rect.Y + 4),
+				Color.White * fade, 0f, Vector2.Zero, new Vector2(0.62f));
 		}
 
 		private static void FillRound(SpriteBatch spriteBatch, Rectangle rect, float radius, Color color)
 		{
-			int r = Math.Clamp((int)radius, 4, Math.Min(rect.Width, rect.Height) / 2);
-			WeDraw.Fill(spriteBatch, new Rectangle(rect.X + r, rect.Y, Math.Max(1, rect.Width - r * 2), rect.Height), color);
+			if (rect.Width < 2 || rect.Height < 2 || color.A < 8)
+				return;
+
+			int r = Math.Clamp((int)MathF.Round(radius), 1, Math.Min(rect.Width, rect.Height) / 2);
+			WeDraw.Fill(spriteBatch, new Rectangle(rect.X + r, rect.Y, Math.Max(1, rect.Width - r * 2), r), color);
+			WeDraw.Fill(spriteBatch, new Rectangle(rect.X + r, rect.Bottom - r, Math.Max(1, rect.Width - r * 2), r), color);
 			WeDraw.Fill(spriteBatch, new Rectangle(rect.X, rect.Y + r, rect.Width, Math.Max(1, rect.Height - r * 2)), color);
 			Texture2D circle = WeDraw.Circle();
 			float scale = r * 2f / circle.Width;
@@ -192,12 +173,24 @@ namespace WallpaperEngine.Chrome
 			spriteBatch.Draw(circle, new Vector2(rect.Right - r, rect.Bottom - r), null, color, 0f, origin, scale, SpriteEffects.None, 0f);
 		}
 
+		private static Rectangle TileRect(Vector2 center, float size)
+		{
+			int s = Math.Max(14, (int)size);
+			return new Rectangle((int)(center.X - s * 0.5f), (int)(center.Y - s * 0.5f), s, s);
+		}
+
+		private static float Smooth(float t)
+		{
+			t = MathHelper.Clamp(t, 0f, 1f);
+			return t * t * (3f - 2f * t);
+		}
+
 		private static Rectangle BarBounds()
 		{
 			float scale = WrenchToolbar.Scale;
 			int n = WrenchHub.Actions.Length;
 			float width = (n * Slot + Pad * 2f) * scale;
-			float height = (BarH + Lift + 12f) * scale;
+			float height = (BarH + Lift + 18f) * scale;
 			Vector2 origin = WrenchToolbar.Anchor;
 			return new Rectangle(
 				(int)(origin.X - width * 0.5f),
