@@ -12,29 +12,10 @@ using WallpaperEngine.UI;
 
 namespace WallpaperEngine.Chrome
 {
-	internal enum WrenchAction
-	{
-		LogoPos,
-		Wallpaper,
-		Music,
-		Widgets,
-		Logo,
-		Layout,
-		Client,
-		Clean
-	}
-
 	internal static class WrenchToolbar
 	{
 		private const float Radius = 22f;
 		private const float ChildRadius = 19f;
-
-		private static readonly WrenchAction[] Actions =
-		{
-			WrenchAction.LogoPos, WrenchAction.Wallpaper, WrenchAction.Music,
-			WrenchAction.Widgets, WrenchAction.Logo, WrenchAction.Layout,
-			WrenchAction.Client, WrenchAction.Clean
-		};
 
 		private static readonly List<Spark> Sparks = new();
 		private static float _open;
@@ -53,14 +34,18 @@ namespace WallpaperEngine.Chrome
 			public float Size;
 		}
 
-		internal static bool Expanded => _expanded || _open > 0.04f;
-		internal static bool Busy => Expanded || HoverAny() || (_open > 0.12f && InOrbit());
+		internal static bool Expanded => !WrenchHub.UseDock && (_expanded || _open > 0.04f);
+		internal static bool Busy => WrenchHub.UseDock
+			? WrenchDock.Busy
+			: Expanded || HoverAny() || (_open > 0.12f && InOrbit());
 
 		internal static Vector2 Anchor => SceneGraph.Pixel(SceneGraph.Wrench);
 
 		internal static float Scale => SceneGraph.ScaleOf(SceneGraph.Wrench);
 
-		internal static Rectangle HitRect() => RoundButton.Hit(Anchor, Radius * Scale + 4f);
+		internal static Rectangle HitRect() => WrenchHub.UseDock
+			? WrenchDock.HitRect()
+			: RoundButton.Hit(Anchor, Radius * Scale + 4f);
 
 		internal static void OnThemeSelected()
 		{
@@ -75,6 +60,15 @@ namespace WallpaperEngine.Chrome
 				_expanded = false;
 				_open = 0f;
 				Sparks.Clear();
+				WrenchDock.Reset();
+				return;
+			}
+
+			if (WrenchHub.UseDock) {
+				_expanded = false;
+				_open = MathHelper.Lerp(_open, 0f, 0.28f);
+				WrenchDock.Update();
+				TickSparks();
 				return;
 			}
 
@@ -98,6 +92,11 @@ namespace WallpaperEngine.Chrome
 			if (!WeModMenu.OnTitle)
 				return;
 
+			if (WrenchHub.UseDock) {
+				WrenchDock.HandleInput();
+				return;
+			}
+
 			if (pressed && HitRect().Contains(Main.mouseX, Main.mouseY)) {
 				if (_expanded)
 					Collapse();
@@ -112,9 +111,9 @@ namespace WallpaperEngine.Chrome
 				return;
 
 			if (pressed) {
-				for (int i = 0; i < Actions.Length; i++) {
+				for (int i = 0; i < WrenchHub.Actions.Length; i++) {
 					if (ChildHit(i).Contains(Main.mouseX, Main.mouseY) && ChildAlpha(i) > 0.55f) {
-						Activate(Actions[i]);
+						WrenchHub.Activate(WrenchHub.Actions[i]);
 						Main.mouseLeftRelease = false;
 						Main.blockMouse = true;
 						return;
@@ -129,7 +128,11 @@ namespace WallpaperEngine.Chrome
 				Main.blockMouse = true;
 		}
 
-		internal static void EndFrame() => _frameInput = false;
+		internal static void EndFrame()
+		{
+			_frameInput = false;
+			WrenchDock.EndFrame();
+		}
 
 		internal static void Expand()
 		{
@@ -155,6 +158,11 @@ namespace WallpaperEngine.Chrome
 			if (!WeModMenu.OnTitle || !SceneGraph.Visible(SceneGraph.Wrench))
 				return;
 
+			if (WrenchHub.UseDock) {
+				WrenchDock.Draw(spriteBatch);
+				return;
+			}
+
 			WeDraw.WithLinear(spriteBatch, () => {
 				Vector2 origin = Anchor;
 				float scale = Scale;
@@ -176,7 +184,7 @@ namespace WallpaperEngine.Chrome
 					RoundButton.DrawWrench(spriteBatch, origin, radius, _spin, 1f, _expanded);
 				RoundButton.Tooltip(spriteBatch, origin, radius, WeText.UI("Wrench"), 1f - _open);
 
-				for (int i = 0; i < Actions.Length; i++) {
+				for (int i = 0; i < WrenchHub.Actions.Length; i++) {
 					float alpha = ChildAlpha(i);
 					if (alpha < 0.02f)
 						continue;
@@ -188,98 +196,29 @@ namespace WallpaperEngine.Chrome
 						RoundButton.DrawThick(spriteBatch, WeDraw.Pixel, origin, pos, 1.4f, line);
 					}
 
-					bool on = Actions[i] == WrenchAction.Clean
-						? WeSave.Data.CleanChrome
-						: WePanels.Is(PanelOf(Actions[i]));
-					Texture2D icon = WeIcons.Get(IconName(Actions[i]));
+					bool on = WrenchHub.IsOn(WrenchHub.Actions[i]);
+					Texture2D icon = WeIcons.Get(WrenchHub.IconName(WrenchHub.Actions[i]));
 					if (icon != null)
 						RoundButton.DrawIcon(spriteBatch, pos, childR, icon, 0f, alpha, on);
 					else
-						RoundButton.DrawLetter(spriteBatch, pos, childR, Letter(Actions[i]), alpha, on);
-					RoundButton.TooltipRadial(spriteBatch, pos, origin, childR, WeText.UI(TipKey(Actions[i])), alpha);
+						RoundButton.DrawLetter(spriteBatch, pos, childR, Letter(i), alpha, on);
+					RoundButton.TooltipRadial(spriteBatch, pos, origin, childR, WeText.UI(WrenchHub.TipKey(WrenchHub.Actions[i])), alpha);
 				}
 
 				DrawSparks(spriteBatch);
 			});
 		}
 
-		private static void Activate(WrenchAction action)
-		{
-			SoundEngine.PlaySound(SoundID.MenuTick);
-			switch (action) {
-				case WrenchAction.LogoPos:
-					LayoutEditor.Begin(SceneGraph.Logo);
-					Collapse();
-					break;
-				case WrenchAction.Wallpaper:
-					WePanels.Open(WePanelId.Wallpaper);
-					break;
-				case WrenchAction.Music:
-					WePanels.Open(WePanelId.Music);
-					break;
-				case WrenchAction.Widgets:
-					WePanels.Open(WePanelId.Widgets);
-					break;
-				case WrenchAction.Logo:
-					WePanels.Open(WePanelId.Logo);
-					break;
-				case WrenchAction.Layout:
-					LayoutEditor.Begin();
-					Collapse();
-					break;
-				case WrenchAction.Client:
-					WePanels.Open(WePanelId.Client);
-					break;
-				case WrenchAction.Clean:
-					WeSettings.ToggleCleanChrome();
-					WeToast.Show(WeSave.Data.CleanChrome ? "ToastCleanOn" : "ToastCleanOff");
-					break;
-			}
-		}
-
-		private static WePanelId PanelOf(WrenchAction action) => action switch {
-			WrenchAction.Wallpaper => WePanelId.Wallpaper,
-			WrenchAction.Music => WePanelId.Music,
-			WrenchAction.Widgets => WePanelId.Widgets,
-			WrenchAction.Logo => WePanelId.Logo,
-			WrenchAction.Client => WePanelId.Client,
-			_ => WePanelId.None
-		};
-
-		private static string IconName(WrenchAction action) => action switch {
-			WrenchAction.LogoPos => WeIcons.MoveLogo,
-			WrenchAction.Wallpaper => WeIcons.Wallpaper,
-			WrenchAction.Music => WeIcons.Music,
-			WrenchAction.Widgets => WeIcons.Widget,
-			WrenchAction.Logo => WeIcons.Logo,
-			WrenchAction.Layout => WeIcons.Layout,
-			WrenchAction.Client => WeIcons.Client,
-			WrenchAction.Clean => WeIcons.Hide,
-			_ => WeIcons.Setting
-		};
-
-		private static string Letter(WrenchAction action) => action switch {
-			WrenchAction.LogoPos => "L",
-			WrenchAction.Wallpaper => "W",
-			WrenchAction.Music => "M",
-			WrenchAction.Widgets => "+",
-			WrenchAction.Logo => "G",
-			WrenchAction.Layout => "E",
-			WrenchAction.Client => "C",
-			WrenchAction.Clean => "H",
+		private static string Letter(int index) => index switch {
+			0 => "L",
+			1 => "W",
+			2 => "M",
+			3 => "+",
+			4 => "G",
+			5 => "E",
+			6 => "C",
+			7 => "H",
 			_ => "?"
-		};
-
-		private static string TipKey(WrenchAction action) => action switch {
-			WrenchAction.LogoPos => "BtnLogoPos",
-			WrenchAction.Wallpaper => "BtnWallpaper",
-			WrenchAction.Music => "BtnMusic",
-			WrenchAction.Widgets => "BtnWidgets",
-			WrenchAction.Logo => "BtnLogo",
-			WrenchAction.Layout => "BtnLayout",
-			WrenchAction.Client => "BtnClient",
-			WrenchAction.Clean => "BtnClean",
-			_ => "Wrench"
 		};
 
 		private static float OrbitRadius
@@ -296,7 +235,7 @@ namespace WallpaperEngine.Chrome
 
 		private static Vector2 ChildDir(int index)
 		{
-			float n = Actions.Length;
+			float n = WrenchHub.Actions.Length;
 			float angle = -MathHelper.PiOver2 + index * MathHelper.TwoPi / n;
 			return angle.ToRotationVector2();
 		}
@@ -326,7 +265,7 @@ namespace WallpaperEngine.Chrome
 				return true;
 			if (_open < 0.2f)
 				return false;
-			for (int i = 0; i < Actions.Length; i++) {
+			for (int i = 0; i < WrenchHub.Actions.Length; i++) {
 				if (ChildAlpha(i) > 0.4f && ChildHit(i).Contains(Main.mouseX, Main.mouseY))
 					return true;
 			}
@@ -380,6 +319,33 @@ namespace WallpaperEngine.Chrome
 					spark.Size * 2f / circle.Width,
 					SpriteEffects.None,
 					0f);
+			}
+		}
+
+		internal static void DrawStylePreview(SpriteBatch spriteBatch, Rectangle dest, int style, float fade, bool selected)
+		{
+			if (style == (int)WrenchStyle.Dock) {
+				WrenchDock.DrawPreview(spriteBatch, dest, fade, selected);
+				return;
+			}
+
+			Vector2 origin = dest.Center.ToVector2();
+			float radius = Math.Min(dest.Width, dest.Height) * 0.16f;
+			Texture2D circle = WeDraw.Circle();
+			spriteBatch.Draw(circle, origin, null, WeAccent.Mid * (0.22f * fade), 0f, circle.Size() * 0.5f, (radius * 2.8f) / circle.Width, SpriteEffects.None, 0f);
+			RoundButton.Draw(spriteBatch, origin, radius, fade, selected);
+			Texture2D hub = WeIcons.Get(WeIcons.Setting);
+			if (hub != null) {
+				float iconScale = radius * 1.1f / Math.Max(1, Math.Max(hub.Width, hub.Height));
+				spriteBatch.Draw(hub, origin, null, WeAccent.Icon(false, selected) * fade, 0f, hub.Size() * 0.5f, iconScale, SpriteEffects.None, 0f);
+			}
+
+			int n = WrenchHub.Actions.Length;
+			float orbit = Math.Min(dest.Width, dest.Height) * 0.36f;
+			for (int i = 0; i < n; i++) {
+				float angle = -MathHelper.PiOver2 + i * MathHelper.TwoPi / n;
+				Vector2 pos = origin + angle.ToRotationVector2() * orbit;
+				RoundButton.Draw(spriteBatch, pos, radius * 0.42f, fade * 0.9f, selected && i == 2);
 			}
 		}
 	}

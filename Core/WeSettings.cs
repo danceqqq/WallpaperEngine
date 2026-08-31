@@ -303,6 +303,21 @@ namespace WallpaperEngine.Core
 			WeSave.Save();
 		}
 
+		internal static void SetWrenchStyle(int style)
+		{
+			style = Math.Clamp(style, 0, 1);
+			if (Current.WrenchStyle == style)
+				return;
+
+			Current.WrenchStyle = style;
+			WeSave.Save();
+			if (style == 0)
+				WrenchToolbar.Collapse();
+			else
+				WrenchDock.Reset();
+			WeToast.Show("ToastHubStyle");
+		}
+
 		internal static void ToggleCleanChrome()
 		{
 			Current.CleanChrome = !Current.CleanChrome;
@@ -337,6 +352,7 @@ namespace WallpaperEngine.Core
 			Current.QuoteWidget = false;
 			Current.MoonWidget = false;
 			Current.CleanChrome = false;
+			Current.WrenchStyle = 0;
 			Current.Layers.Clear();
 			Current.SelectedLayerId = "";
 			foreach (WeElementRecord element in Current.Elements) {

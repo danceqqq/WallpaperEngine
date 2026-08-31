@@ -1,3 +1,7 @@
+v0.5
+- Client settings can switch the customize hub between the circle and a sliding iOS-style bar (live previews in the panel)
+- Menu buttons: visuals and hitboxes stay together after moving them (DrawBorderStringBig path + remap only when the text actually shifted). Thanks Glorp for the report
+
 v0.4
 - Custom tracks have a delete button (the bin). Click a row to play that song
 - Change logo uses the Terraria tree icon, sized for the wrench circle

@@ -118,6 +118,10 @@ UI: {
 	ResetChrome: Сбросить оформление окна
 	ShowHelp: Показать подсказку
 	BorderlessHint: Цвет рамки виден в оконном режиме.
+	HubStyle: Стиль меню настройки
+	HubStyleRadial: Круг
+	HubStyleDock: Полоска
+	ToastHubStyle: Стиль меню применён
 	ToastWallpaper: Обои применены
 	ToastLogo: Лого применено
 	ToastMusic: Музыка применена

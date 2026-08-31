@@ -463,6 +463,9 @@ namespace WallpaperEngine.UI
 		private static void DrawClient(SpriteBatch spriteBatch, Rectangle panel, ref int y)
 		{
 			DrawHint(spriteBatch, panel, ref y, WeText.UI("BorderlessHint"));
+			DrawHint(spriteBatch, panel, ref y, WeText.UI("HubStyle"));
+			DrawHubStyle(spriteBatch, panel, ref y, 0);
+			DrawHubStyle(spriteBatch, panel, ref y, 1);
 			DrawRgb(spriteBatch, panel, ref y, "caption", WeSettings.CaptionColor, WeText.UI("CaptionColor"));
 			DrawRgb(spriteBatch, panel, ref y, "border", WeSettings.BorderColor, WeText.UI("BorderColor"));
 			DrawRgb(spriteBatch, panel, ref y, "title", WeSettings.TitleTextColor, WeText.UI("TitleTextColor"));
@@ -477,6 +480,11 @@ namespace WallpaperEngine.UI
 		private static void ClickClient(Rectangle panel, ref int y)
 		{
 			SkipHint(ref y);
+			SkipHint(ref y);
+			if (ClickHubStyle(panel, ref y, 0))
+				WeSettings.SetWrenchStyle(0);
+			if (ClickHubStyle(panel, ref y, 1))
+				WeSettings.SetWrenchStyle(1);
 			ClickRgb(panel, ref y, "caption", true);
 			ClickRgb(panel, ref y, "border", true);
 			ClickRgb(panel, ref y, "title", true);
@@ -507,6 +515,30 @@ namespace WallpaperEngine.UI
 				if (ClickAccent(panel, ref y))
 					WeAccent.Set(i);
 			}
+		}
+
+		private static void DrawHubStyle(SpriteBatch spriteBatch, Rectangle panel, ref int y, int style)
+		{
+			Rectangle hit = Row(panel, y, 92);
+			bool on = WeSave.Data.WrenchStyle == style;
+			bool hover = hit.Contains(Main.mouseX, Main.mouseY);
+			WeDraw.Fill(spriteBatch, hit, (on ? WeAccent.Deep : new Color(28, 30, 38)) * ((hover ? 0.95f : 0.8f) * _fade));
+			WeDraw.Border(spriteBatch, hit, (on || hover ? WeAccent.Light : WeAccent.Mid) * _fade);
+			var preview = new Rectangle(hit.X + 8, hit.Y + 8, 168, hit.Height - 16);
+			WeDraw.Fill(spriteBatch, preview, new Color(16, 18, 24) * _fade);
+			WrenchToolbar.DrawStylePreview(spriteBatch, preview, style, _fade, on);
+			string title = WeText.UI(style == 1 ? "HubStyleDock" : "HubStyleRadial");
+			ChatManager.DrawColorCodedStringWithShadow(
+				spriteBatch, FontAssets.MouseText.Value, title,
+				new Vector2(preview.Right + 14, hit.Y + 34), Color.White * _fade, 0f, Vector2.Zero, new Vector2(0.82f));
+			y += 100;
+		}
+
+		private static bool ClickHubStyle(Rectangle panel, ref int y, int style)
+		{
+			Rectangle hit = Row(panel, y, 92);
+			y += 100;
+			return hit.Contains(Main.mouseX, Main.mouseY);
 		}
 
 		private static void DrawCard(SpriteBatch spriteBatch, Rectangle panel, ref int y, string text, bool on)
@@ -921,7 +953,7 @@ namespace WallpaperEngine.UI
 		{
 			float extra = WeSave.Data.Layers.Count * 42f + WeSave.Data.Wallpapers.Count * 58f + WeSave.Data.Logos.Count * 58f +
 			              WeSave.Data.Tracks.Count * 42f + WeCatalog.Skies.Count * 62f + WeCatalog.Logos.Count * 62f;
-			return 520f + extra;
+			return 720f + extra;
 		}
 	}
 }

@@ -118,6 +118,10 @@ UI: {
 	ResetChrome: Reset window chrome
 	ShowHelp: Show tutorial
 	BorderlessHint: Title bar colors show in windowed mode.
+	HubStyle: Customize hub style
+	HubStyleRadial: Circle
+	HubStyleDock: Bar
+	ToastHubStyle: Hub style applied
 	ToastWallpaper: Wallpaper applied
 	ToastLogo: Logo applied
 	ToastMusic: Music applied

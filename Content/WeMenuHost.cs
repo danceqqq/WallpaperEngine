@@ -87,7 +87,8 @@ namespace WallpaperEngine.Content
 					Main.mouseLeftRelease = false;
 				}
 
-				int dy = (int)System.Math.Round(SceneGraph.Pixel(SceneGraph.MenuButtons).Y - MenuButtonHooks.VanillaMenuY);
+				MenuButtonHooks.BeginFrame();
+				int dy = MenuButtonHooks.MouseRemapY;
 				if (dy != 0 && !WePanels.IsOpen && !WeSplash.Visible && SceneGraph.Visible(SceneGraph.MenuButtons)) {
 					Main.mouseY -= dy;
 					remapY = true;

@@ -21,14 +21,29 @@ namespace WallpaperEngine.Chrome
 		internal static Rectangle MenuDrawBounds;
 		internal static float VanillaMenuY = 220f;
 		internal static float LastMenuBottom;
-		private static bool _menuDrawStarted;
+		internal static int MouseRemapY;
+		private static int _remapYNext;
 		private static bool _drawWaveHover;
+		private static bool _passStarted;
 
 		public override void Load()
 		{
 			IL_Main.DrawMenu += PatchMenuButtonPositions;
 			IL_Main.DrawMenu += PatchMenuHoverColor;
 			IL_Main.DrawMenu += PatchMenuHoverDrawString;
+			On_Utils.DrawBorderStringBig += DrawBorderStringBigHook;
+		}
+
+		public override void Unload()
+		{
+			On_Utils.DrawBorderStringBig -= DrawBorderStringBigHook;
+		}
+
+		internal static void BeginFrame()
+		{
+			MouseRemapY = _remapYNext;
+			_remapYNext = 0;
+			_passStarted = false;
 		}
 
 		internal static Rectangle MenuHit()
@@ -211,6 +226,36 @@ namespace WallpaperEngine.Chrome
 			spriteBatch.DrawString(spriteFont, text, position, WeAccent.Hover, rotation, origin, scale, effects, layerDepth);
 		}
 
+		private static Vector2 DrawBorderStringBigHook(
+			On_Utils.orig_DrawBorderStringBig orig,
+			SpriteBatch spriteBatch,
+			string text,
+			Vector2 pos,
+			Color color,
+			float scale,
+			float anchorx,
+			float anchory,
+			int maxCharactersDisplayed)
+		{
+			if (ShouldShift() && IsTitleMenuButton(text, pos)) {
+				if (WePanels.IsOpen || WeSplash.Visible || !SceneGraph.Visible(SceneGraph.MenuButtons))
+					return Vector2.Zero;
+
+				ShiftLayout(ref pos, text, scale, anchorx, anchory);
+				scale *= SceneGraph.ScaleOf(SceneGraph.MenuButtons);
+			}
+
+			return orig(spriteBatch, text, pos, color, scale, anchorx, anchory, maxCharactersDisplayed);
+		}
+
+		private static bool IsTitleMenuButton(string text, Vector2 pos)
+		{
+			if (string.IsNullOrEmpty(text) || Main.menuMode != 0)
+				return false;
+			Vector2 menu = SceneGraph.Pixel(SceneGraph.MenuButtons);
+			return Math.Abs(pos.X - menu.X) <= 360f || Math.Abs(pos.X - Main.screenWidth * 0.5f) <= 360f;
+		}
+
 		private static void ShiftMenuItem(DynamicSpriteFont font, string text, ref Vector2 position, Vector2 origin, float scale)
 		{
 			if (string.IsNullOrEmpty(text))
@@ -220,19 +265,45 @@ namespace WallpaperEngine.Chrome
 			if (Math.Abs(position.X - menu.X) > 360f && Math.Abs(position.X - Main.screenWidth * 0.5f) > 360f)
 				return;
 
-			float offY = position.Y - origin.Y * scale;
-			if (!_menuDrawStarted) {
-				_menuDrawStarted = true;
-				VanillaMenuY = offY;
-			}
-
+			float layoutY = position.Y - origin.Y * scale;
+			BeginPass(layoutY);
 			position.Y += menu.Y - VanillaMenuY;
+			_remapYNext = (int)Math.Round(menu.Y - VanillaMenuY);
 			Vector2 size = font.MeasureString(text) * scale;
-			var rect = new Rectangle(
+			NoteBounds(
 				(int)MathF.Round(position.X - origin.X * scale),
 				(int)MathF.Round(position.Y - origin.Y * scale),
 				Math.Max(1, (int)MathF.Ceiling(size.X)),
 				Math.Max(1, (int)MathF.Ceiling(size.Y)));
+		}
+
+		private static void ShiftLayout(ref Vector2 pos, string text, float scale, float anchorx, float anchory)
+		{
+			Vector2 menu = SceneGraph.Pixel(SceneGraph.MenuButtons);
+			BeginPass(pos.Y);
+			pos.Y += menu.Y - VanillaMenuY;
+			_remapYNext = (int)Math.Round(menu.Y - VanillaMenuY);
+			var font = FontAssets.DeathText.Value;
+			Vector2 size = font.MeasureString(text) * scale;
+			NoteBounds(
+				(int)MathF.Round(pos.X - size.X * anchorx),
+				(int)MathF.Round(pos.Y - size.Y * anchory),
+				Math.Max(1, (int)MathF.Ceiling(size.X)),
+				Math.Max(1, (int)MathF.Ceiling(size.Y)));
+		}
+
+		private static void BeginPass(float layoutY)
+		{
+			if (_passStarted)
+				return;
+			_passStarted = true;
+			MenuDrawBounds = Rectangle.Empty;
+			VanillaMenuY = layoutY;
+		}
+
+		private static void NoteBounds(int x, int y, int w, int h)
+		{
+			var rect = new Rectangle(x, y, w, h);
 			MenuDrawBounds = MenuDrawBounds.IsEmpty ? rect : Rectangle.Union(MenuDrawBounds, rect);
 			LastMenuBottom = MenuDrawBounds.Bottom;
 		}
@@ -244,7 +315,6 @@ namespace WallpaperEngine.Chrome
 			if (WePanels.IsOpen || WeSplash.Visible || !SceneGraph.Visible(SceneGraph.MenuButtons))
 				return 5000;
 			MenuDrawBounds = Rectangle.Empty;
-			_menuDrawStarted = false;
 			return (int)Math.Round(SceneGraph.Pixel(SceneGraph.MenuButtons).Y);
 		}
 

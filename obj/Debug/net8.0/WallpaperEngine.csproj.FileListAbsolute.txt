@@ -12,3 +12,4 @@ C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEng
 C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\refint\WallpaperEngine.dll
 C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.pdb
 C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\ref\WallpaperEngine.dll
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.sourcelink.json

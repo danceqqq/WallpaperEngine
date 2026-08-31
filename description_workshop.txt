@@ -14,7 +14,7 @@ Logo and wallpaper are independent. You can take a logo from one mod menu and a 
 [*] Music player with custom ogg/mp3/wav, shuffle, loop, and a delete button per track
 [*] Clock, greeting, and moon-phase widgets
 [*] Drag, scale, or hide title-screen elements
-[*] Recolor the tModLoader window caption and border (client)
+[*] Recolor the tModLoader window caption and border, and pick circle or bar style for the customize hub (client)
 [/list]
 
 [h2]Borrowed themes[/h2]

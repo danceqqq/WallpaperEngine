@@ -149,6 +149,7 @@ namespace WallpaperEngine.Core
 		public int TitleTextB { get; set; } = 240;
 		public bool DarkTitleBar { get; set; } = true;
 		public string WindowIconFile { get; set; } = "";
+		public int WrenchStyle { get; set; }
 	}
 
 	internal static class WeSave
@@ -242,6 +243,8 @@ namespace WallpaperEngine.Core
 				_data.Wallpaper = WallpaperKind.Vanilla;
 			if (_data.AccentIndex < 0 || _data.AccentIndex >= WeAccent.Palettes.Length)
 				_data.AccentIndex = 0;
+			if (_data.WrenchStyle < 0 || _data.WrenchStyle > 1)
+				_data.WrenchStyle = 0;
 
 			foreach (WeArtRecord wall in _data.Wallpapers) {
 				if (wall == null)
