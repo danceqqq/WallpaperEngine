@@ -23,6 +23,7 @@ namespace WallpaperEngine.Chrome
 		private static bool _expanded;
 		private static bool _frameInput;
 		private static bool _mouseHeld;
+		private static bool _holdLock;
 		private static bool _pulse = true;
 
 		private struct Spark
@@ -86,8 +87,7 @@ namespace WallpaperEngine.Chrome
 				return;
 
 			_frameInput = true;
-			bool pressed = Main.mouseLeft && !_mouseHeld;
-			_mouseHeld = Main.mouseLeft;
+			bool pressed = WeInput.Edge(ref _mouseHeld, ref _holdLock);
 
 			if (!WeModMenu.OnTitle)
 				return;
@@ -109,8 +109,7 @@ namespace WallpaperEngine.Chrome
 					Collapse();
 				else
 					Expand();
-				Main.mouseLeftRelease = false;
-				Main.blockMouse = true;
+				WeInput.LockHold(ref _holdLock);
 				return;
 			}
 
@@ -121,8 +120,7 @@ namespace WallpaperEngine.Chrome
 				for (int i = 0; i < WrenchHub.Actions.Length; i++) {
 					if (ChildHit(i).Contains(Main.mouseX, Main.mouseY) && ChildAlpha(i) > 0.55f) {
 						WrenchHub.Activate(WrenchHub.Actions[i]);
-						Main.mouseLeftRelease = false;
-						Main.blockMouse = true;
+						WeInput.LockHold(ref _holdLock);
 						return;
 					}
 				}

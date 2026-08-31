@@ -76,12 +76,13 @@ namespace WallpaperEngine.Content
 		private static void DrawMenuHook(On_Main.orig_DrawMenu orig, Main self, GameTime time)
 		{
 			bool steal = false;
-			bool savedRelease = Main.mouseLeftRelease;
+			bool releaseAfterInput = Main.mouseLeftRelease;
 			int savedMouseY = Main.mouseY;
 			bool remapY = false;
 
 			if (WeModMenu.OnTitle) {
 				HandleInput();
+				releaseAfterInput = Main.mouseLeftRelease;
 				steal = WeSplash.Visible || WePanels.IsOpen || WePanels.AteInput || WrenchToolbar.Busy || LayoutEditor.Busy || WidgetHost.Busy;
 				if (steal) {
 					Main.blockMouse = true;
@@ -98,8 +99,13 @@ namespace WallpaperEngine.Content
 
 			orig(self, time);
 
-			if (steal)
-				Main.mouseLeftRelease = savedRelease;
+			if (steal) {
+				if (WeInput.LeftDown)
+					Main.mouseLeftRelease = false;
+				else
+					Main.mouseLeftRelease = releaseAfterInput;
+			}
+
 			if (remapY)
 				Main.mouseY = savedMouseY;
 		}

@@ -188,6 +188,7 @@ namespace WallpaperEngine.Audio
 			Main.newMusic = 0;
 			MuteVanilla();
 			TickMix(1f, 0.01f);
+			WeCustomAudio.Update();
 			if (_paused)
 				return;
 
@@ -198,7 +199,6 @@ namespace WallpaperEngine.Audio
 					_customRetryDelay = 20;
 			}
 
-			WeCustomAudio.Update();
 			if (WeCustomAudio.Finished) {
 				if (_loop)
 					PlayIndex(_index);
@@ -214,6 +214,13 @@ namespace WallpaperEngine.Audio
 				return;
 			}
 
+			EnsureCustomMode();
+			if (!WeCustomAudio.HasOutput) {
+				_paused = false;
+				PlayIndex(_index);
+				return;
+			}
+
 			_paused = !_paused;
 			WeCustomAudio.TogglePause();
 			if (_paused)
@@ -224,8 +231,9 @@ namespace WallpaperEngine.Audio
 		{
 			if (Active.Count == 0)
 				return;
-			int next = _shuffle && !_loop ? RandomIndex(_index) : (_index + 1) % Active.Count;
-			if (_shuffle && !_loop)
+			EnsureCustomMode();
+			int next = _shuffle ? RandomIndex(_index) : (_index + 1) % Active.Count;
+			if (_shuffle)
 				ShuffleHistory.Add(_index);
 			PlayIndex(next);
 		}
@@ -234,7 +242,8 @@ namespace WallpaperEngine.Audio
 		{
 			if (Active.Count == 0)
 				return;
-			if (_shuffle && !_loop && ShuffleHistory.Count > 0) {
+			EnsureCustomMode();
+			if (_shuffle && ShuffleHistory.Count > 0) {
 				int last = ShuffleHistory[^1];
 				ShuffleHistory.RemoveAt(ShuffleHistory.Count - 1);
 				PlayIndex(Math.Clamp(last, 0, Active.Count - 1));
@@ -317,12 +326,21 @@ namespace WallpaperEngine.Audio
 			PlayIndex(index);
 		}
 
+		private static void EnsureCustomMode()
+		{
+			if (WeSave.Data.Music == MusicKind.Custom)
+				return;
+			WeSave.Data.Music = MusicKind.Custom;
+			WeSave.Save();
+		}
+
 		private static void PlayIndex(int index)
 		{
 			WeCustomAudio.Stop();
 			if (Active.Count == 0)
 				return;
 
+			EnsureCustomMode();
 			_index = Math.Clamp(index, 0, Active.Count - 1);
 			_paused = false;
 			_customRetryDelay = 0;

@@ -105,8 +105,8 @@ namespace WallpaperEngine.Layout
 				Logo => new Vector2(w * 0.5f, 100f),
 				MenuButtons => new Vector2(w * 0.5f, 220f),
 				ThemeSwap => new Vector2(w * 0.5f, h - 22f),
-				SocialTml => new Vector2(w - 120f, 48f),
-				SocialTerraria => new Vector2(w - 120f, 78f),
+				SocialTml => NativeSocialCenter(true, h),
+				SocialTerraria => NativeSocialCenter(false, h),
 				Version => new Vector2(w - 18f, 36f),
 				News => new Vector2(w - 18f, h - 86f),
 				SunMoon => new Vector2(w * 0.5f, 80f),
@@ -154,8 +154,8 @@ namespace WallpaperEngine.Layout
 				Moon => MoonWidget.HitRect(),
 				Discord => DiscordWidget.HitRect(),
 				ThemeSwap => Around(pos, 220, 28),
-				SocialTml => Around(pos, 140, 28),
-				SocialTerraria => Around(pos, 140, 28),
+				SocialTml => SocialHit(pos, true),
+				SocialTerraria => SocialHit(pos, false),
 				Version => Around(pos, 180, 28),
 				News => Around(pos, 280, 28),
 				SunMoon => Around(pos, 80 * scale, 80 * scale),
@@ -178,6 +178,53 @@ namespace WallpaperEngine.Layout
 				if (!record.Visible && CanHide(id))
 					yield return record;
 			}
+		}
+
+		internal static bool RestoreNativeSocialIfMisplaced(WeSaveData data)
+		{
+			bool dirty = false;
+			dirty |= UnstickTopRightSocial(data, SocialTml);
+			dirty |= UnstickTopRightSocial(data, SocialTerraria);
+			return dirty;
+		}
+
+		private static bool UnstickTopRightSocial(WeSaveData data, string id)
+		{
+			WeElementRecord el = data?.Elements?.Find(item => item.Id == id);
+			if (el == null || !el.Customized)
+				return false;
+			if (el.AnchorX <= 0.80f || el.AnchorY >= 0.18f)
+				return false;
+			el.Customized = false;
+			return true;
+		}
+
+		private static Vector2 NativeSocialCenter(bool tml, int h)
+		{
+			int n = SocialCount(tml);
+			Vector2 origin = tml
+				? new Vector2(18f, h - 26f - 22f)
+				: new Vector2(18f, 12f);
+			return origin + new Vector2(n * 15f, 11f);
+		}
+
+		private static Rectangle SocialHit(Vector2 center, bool tml)
+		{
+			int n = SocialCount(tml);
+			return Around(center, n * 30f + 8f, 28f);
+		}
+
+		private static int SocialCount(bool tml)
+		{
+			try {
+				var links = tml ? Main.tModLoaderTitleLinks : Main.TitleLinks;
+				if (links != null && links.Count > 0)
+					return links.Count;
+			}
+			catch {
+			}
+
+			return 4;
 		}
 
 		private static Rectangle Around(Vector2 pos, float w, float h) =>

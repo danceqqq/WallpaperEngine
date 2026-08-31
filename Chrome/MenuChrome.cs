@@ -66,7 +66,7 @@ namespace WallpaperEngine.Chrome
 				return;
 			}
 
-			if (!SceneGraph.Visible(SceneGraph.SocialTerraria) || LayoutEditor.Editing)
+			if (!SceneGraph.Visible(SceneGraph.SocialTerraria))
 				return;
 
 			if (SceneGraph.Get(SceneGraph.SocialTerraria).Customized)
@@ -82,7 +82,7 @@ namespace WallpaperEngine.Chrome
 				return;
 			}
 
-			if (!SceneGraph.Visible(SceneGraph.SocialTml) || LayoutEditor.Editing)
+			if (!SceneGraph.Visible(SceneGraph.SocialTml))
 				return;
 
 			if (SceneGraph.Get(SceneGraph.SocialTml).Customized)
@@ -151,13 +151,15 @@ namespace WallpaperEngine.Chrome
 				Utils.OpenToURL(url);
 		}
 
-		private static void DrawIconRow(bool tml, Vector2 anchor)
+		private static void DrawIconRow(bool tml, Vector2 center)
 		{
 			var links = tml ? Main.tModLoaderTitleLinks : Main.TitleLinks;
-			if (links == null)
+			if (links == null || links.Count == 0)
 				return;
 
-			Vector2 pos = new((int)MathF.Round(anchor.X), (int)MathF.Round(anchor.Y));
+			Vector2 pos = new(
+				(int)MathF.Round(center.X - links.Count * 15f),
+				(int)MathF.Round(center.Y - 11f));
 			foreach (var link in links) {
 				link.Draw(Main.spriteBatch, pos);
 				pos.X += 30f;

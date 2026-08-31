@@ -291,6 +291,8 @@ namespace WallpaperEngine.Core
 				_data.SelectedLayerId = _data.Layers.Count > 0 ? _data.Layers[0].Id : "";
 
 			Layout.SceneGraph.EnsureRecords(_data);
+			if (Layout.SceneGraph.RestoreNativeSocialIfMisplaced(_data))
+				Save();
 		}
 
 		internal static void Save()

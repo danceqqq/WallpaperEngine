@@ -18,7 +18,8 @@ Logo and wallpaper are independent. You can take a logo from one mod menu and a 
 [/list]
 
 [h2]Changelog[/h2]
-[b]0.7[/b] Discord banner shows voice channels and scrolls. Member list has Join on people in voice. Widget tiles expand settings on hover. Clicks no longer pass through open panels into the hub underneath.
+[b]0.8[/b] Holding buttons no longer repeats (player skip/pause/loop/shuffle, wrench, panels).
+[b]0.7[/b] Discord banner shows voice channels and scrolls. Member list has Join on people in voice. Widget tiles expand settings on hover. Clicks no longer pass through open panels. Social icons back at native tML spots. Discord voice follows who is actually in a channel.
 [b]0.6[/b] Catalyst logo bounce. Insouciant live rift sky. Discord widget (paste server ID, live refresh, invite icon, Join Voice).
 [b]0.5[/b] Circle or iOS-style customize hub. Menu button hitboxes stay with the text after moving them.
 [b]0.4[/b] Delete custom tracks. Moon widget. Live vs still labels on borrowed skies.

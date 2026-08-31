@@ -27,6 +27,7 @@ namespace WallpaperEngine.Widgets
 		private static readonly List<(Rectangle Rect, string Channel)> Joins = new();
 
 		private static bool _mouseHeld;
+		private static bool _holdLock;
 		private static bool _hover;
 		private static bool _hoverJoin;
 		private static bool _editing;
@@ -152,7 +153,7 @@ namespace WallpaperEngine.Widgets
 		internal static void HandleInput()
 		{
 			if (!Enabled || WeSplash.Visible || LayoutEditor.Editing || WePanels.AteInput) {
-				_mouseHeld = Main.mouseLeft;
+				WeInput.Edge(ref _mouseHeld, ref _holdLock);
 				if (WePanels.IsOpen)
 					return;
 				_hover = _hoverJoin = false;
@@ -160,13 +161,12 @@ namespace WallpaperEngine.Widgets
 			}
 
 			if (WePanels.IsOpen) {
-				_mouseHeld = Main.mouseLeft;
+				WeInput.Edge(ref _mouseHeld, ref _holdLock);
 				_hover = _hoverJoin = false;
 				return;
 			}
 
-			bool pressed = Main.mouseLeft && !_mouseHeld;
-			_mouseHeld = Main.mouseLeft;
+			bool pressed = WeInput.Edge(ref _mouseHeld, ref _holdLock);
 			Point mouse = new(Main.mouseX, Main.mouseY);
 			_hoverJoin = false;
 			_joinChannel = "";
@@ -187,12 +187,14 @@ namespace WallpaperEngine.Widgets
 			if (_hoverJoin) {
 				SoundEngine.PlaySound(SoundID.MenuTick);
 				DiscordFeed.OpenJoin(_joinChannel);
+				WeInput.LockHold(ref _holdLock);
 				return;
 			}
 
 			if (_hover) {
 				SoundEngine.PlaySound(SoundID.MenuTick);
 				OpenIdEditor();
+				WeInput.LockHold(ref _holdLock);
 			}
 		}
 
@@ -335,8 +337,11 @@ namespace WallpaperEngine.Widgets
 			Hairline(spriteBatch, card, s, card.Y + 58f * s, fade);
 			DrawOnlineLine(spriteBatch, card, s, new Vector2(card.X + 18f * s, card.Y + 88f * s), fade, 7, false);
 			string sub = CompactSub();
-			if (!string.IsNullOrEmpty(DiscordFeed.Snap.Voice) && DiscordFeed.Status == DiscordFeedStatus.Ok)
-				sub = WeText.UI("DiscordInVoice").Replace("%n", VoiceCount().ToString()) + "  ·  # " + DiscordFeed.Snap.Voice;
+			if (DiscordFeed.Status == DiscordFeedStatus.Ok) {
+				string voiceName = OccupiedVoiceName();
+				if (voiceName.Length > 0)
+					sub = WeText.UI("DiscordInVoice").Replace("%n", VoiceCount().ToString()) + "  ·  # " + voiceName;
+			}
 			ChatManager.DrawColorCodedStringWithShadow(
 				spriteBatch, FontAssets.MouseText.Value, Plain(Ellipsize(FontAssets.MouseText.Value, sub, card.Width - 36f * s, 0.68f * s)),
 				new Vector2(card.X + 18f * s, card.Bottom - 28f * s),
@@ -708,6 +713,17 @@ namespace WallpaperEngine.Widgets
 				return occ != 0 ? occ : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
 			});
 			return bands;
+		}
+
+		private static string OccupiedVoiceName()
+		{
+			List<VoiceBand> bands = VoiceBands();
+			for (int i = 0; i < bands.Count; i++) {
+				if (bands[i].People.Count > 0)
+					return bands[i].Name;
+			}
+
+			return "";
 		}
 
 		private static string DisplayName()

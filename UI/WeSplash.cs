@@ -18,6 +18,7 @@ namespace WallpaperEngine.UI
 		private static bool _dontShow;
 		private static float _fade;
 		private static bool _mouseHeld;
+		private static bool _holdLock;
 
 		internal static bool Visible => _visible || _fade > 0.02f;
 
@@ -72,8 +73,7 @@ namespace WallpaperEngine.UI
 				return;
 
 			Main.blockMouse = true;
-			bool pressed = Main.mouseLeft && !_mouseHeld;
-			_mouseHeld = Main.mouseLeft;
+			bool pressed = WeInput.Edge(ref _mouseHeld, ref _holdLock);
 			if (!pressed)
 				return;
 
@@ -81,13 +81,13 @@ namespace WallpaperEngine.UI
 			if (CheckHit(card).Contains(Main.mouseX, Main.mouseY)) {
 				_dontShow = !_dontShow;
 				SoundEngine.PlaySound(SoundID.MenuTick);
-				Main.mouseLeftRelease = false;
+				WeInput.LockHold(ref _holdLock);
 				return;
 			}
 
 			if (OkHit(card).Contains(Main.mouseX, Main.mouseY)) {
 				Dismiss(_dontShow);
-				Main.mouseLeftRelease = false;
+				WeInput.LockHold(ref _holdLock);
 			}
 		}
 

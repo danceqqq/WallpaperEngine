@@ -34,6 +34,7 @@ namespace WallpaperEngine.Audio
 
 		internal static bool IsPlaying => _instance != null && !_paused && !_finished;
 		internal static bool IsPaused => _paused;
+		internal static bool HasOutput => _instance != null;
 		internal static bool Finished => _finished;
 		internal static float Time => _time;
 		internal static float Duration => _duration > 1f ? _duration : 180f;

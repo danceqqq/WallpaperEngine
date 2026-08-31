@@ -33,6 +33,7 @@ namespace WallpaperEngine.Audio
 		private static bool _draggingSeek;
 		private static bool _frameInput;
 		private static bool _mouseHeld;
+		private static bool _holdLock;
 
 		internal static bool Busy => _hover && WeSave.Data.PlayerWidget;
 
@@ -45,6 +46,8 @@ namespace WallpaperEngine.Audio
 			_expand = 0f;
 			_hover = false;
 			_draggingSeek = false;
+			_mouseHeld = false;
+			_holdLock = false;
 		}
 
 		internal static void HandleInput()
@@ -59,6 +62,11 @@ namespace WallpaperEngine.Audio
 
 		internal static void Update()
 		{
+			if (!WeInput.LeftDown) {
+				_holdLock = false;
+				_mouseHeld = false;
+			}
+
 			WePlaylist.Update();
 			if (!Enabled)
 				return;
@@ -108,15 +116,16 @@ namespace WallpaperEngine.Audio
 
 		private static void UpdateInput()
 		{
+			bool pressed = WeInput.Edge(ref _mouseHeld, ref _holdLock);
 			if (!Enabled || WePanels.IsOpen || WeSplash.Visible || LayoutEditor.Editing) {
 				_expand = MathHelper.Lerp(_expand, 0f, 0.22f);
+				_draggingSeek = false;
 				return;
 			}
-
-			bool pressed = Main.mouseLeft && !_mouseHeld;
-			_mouseHeld = Main.mouseLeft;
 			Vector2 center = Anchor;
+			float ease = Ease;
 			Rectangle collapsed = RoundButton.Hit(center, CollapsedRadius + 12f);
+			Rectangle card = GetCardRect(center, ease);
 			Rectangle expanded = GetCardRect(center, 1f);
 			Rectangle hit = _expand > 0.42f || _draggingSeek ? expanded : collapsed;
 			_hover = hit.Contains(Main.mouseX, Main.mouseY);
@@ -129,12 +138,12 @@ namespace WallpaperEngine.Audio
 			if (!_hover && !_draggingSeek)
 				return;
 
-			if (Ease > 0.72f)
-				HandleExpanded(GetCardRect(center, 1f));
+			if (ease > 0.38f)
+				HandleExpanded(card, pressed);
 			else if (pressed && collapsed.Contains(Main.mouseX, Main.mouseY)) {
 				SoundEngine.PlaySound(SoundID.MenuTick);
 				WePlaylist.TogglePause();
-				Main.mouseLeftRelease = false;
+				WeInput.LockHold(ref _holdLock);
 			}
 		}
 
@@ -150,13 +159,12 @@ namespace WallpaperEngine.Audio
 				(int)height);
 		}
 
-		private static void HandleExpanded(Rectangle card)
+		private static void HandleExpanded(Rectangle card, bool pressed)
 		{
-			Vector2 controls = new(card.X + card.Width * 0.5f, card.Y + ControlsY);
-			var seek = new Rectangle(card.X + 18, card.Y + (int)SeekY - 8, card.Width - 36, 20);
+			LayoutCard(card, out Vector2 controls, out Rectangle seek, out Vector2 shuffle, out Vector2 loop, out float tx);
 			if (_draggingSeek) {
-				if (Main.mouseLeft) {
-					float t = MathHelper.Clamp((Main.mouseX - seek.X) / (float)seek.Width, 0f, 1f);
+				if (WeInput.LeftDown) {
+					float t = MathHelper.Clamp((Main.mouseX - seek.X) / (float)Math.Max(1, seek.Width), 0f, 1f);
 					WePlaylist.Seek01(t);
 				}
 				else
@@ -164,36 +172,53 @@ namespace WallpaperEngine.Audio
 				return;
 			}
 
-			if (!Main.mouseLeft || !Main.mouseLeftRelease)
+			if (!pressed)
 				return;
 
 			if (seek.Contains(Main.mouseX, Main.mouseY)) {
 				_draggingSeek = true;
-				WePlaylist.Seek01(MathHelper.Clamp((Main.mouseX - seek.X) / (float)seek.Width, 0f, 1f));
-				Main.mouseLeftRelease = false;
+				WePlaylist.Seek01(MathHelper.Clamp((Main.mouseX - seek.X) / (float)Math.Max(1, seek.Width), 0f, 1f));
+				WeInput.LockHold(ref _holdLock);
 				return;
 			}
 
-			if (RoundButton.Hit(controls, PlayRadius).Contains(Main.mouseX, Main.mouseY))
+			if (HitCtrl(controls, PlayRadius * tx + 2f))
 				WePlaylist.TogglePause();
-			else if (RoundButton.Hit(controls + new Vector2(-SkipOffset, 0f), SkipRadius).Contains(Main.mouseX, Main.mouseY))
+			else if (HitCtrl(controls + new Vector2(-SkipOffset * tx, 0f), SkipRadius * tx + 3f))
 				WePlaylist.Previous();
-			else if (RoundButton.Hit(controls + new Vector2(SkipOffset, 0f), SkipRadius).Contains(Main.mouseX, Main.mouseY))
+			else if (HitCtrl(controls + new Vector2(SkipOffset * tx, 0f), SkipRadius * tx + 3f))
 				WePlaylist.Next();
-			else if (RoundButton.Hit(controls + new Vector2(-ExtraOffset, 0f), SkipRadius).Contains(Main.mouseX, Main.mouseY))
+			else if (HitCtrl(controls + new Vector2(-ExtraOffset * tx, 0f), SkipRadius * tx + 3f))
 				WePanels.Open(WePanelId.Music);
-			else if (RoundButton.Hit(controls + new Vector2(ExtraOffset, 0f), SkipRadius).Contains(Main.mouseX, Main.mouseY)) {
+			else if (HitCtrl(controls + new Vector2(ExtraOffset * tx, 0f), SkipRadius * tx + 3f)) {
 				if (WeFiles.TryPickAudio(out string path))
 					WeLibrary.Import(path);
 			}
-			else if (RoundButton.Hit(new Vector2(card.Right - 28f, controls.Y), LoopRadius).Contains(Main.mouseX, Main.mouseY))
+			else if (HitCtrl(loop, LoopRadius * tx + 4f))
 				WePlaylist.ToggleLoop();
-			else if (RoundButton.Hit(new Vector2(card.X + 28f, controls.Y), LoopRadius).Contains(Main.mouseX, Main.mouseY))
+			else if (HitCtrl(shuffle, LoopRadius * tx + 4f))
 				WePlaylist.ToggleShuffle();
+			else
+				return;
 
 			SoundEngine.PlaySound(SoundID.MenuTick);
-			Main.mouseLeftRelease = false;
+			WeInput.LockHold(ref _holdLock);
 		}
+
+		private static void LayoutCard(Rectangle card, out Vector2 controls, out Rectangle seek, out Vector2 shuffle, out Vector2 loop, out float tx)
+		{
+			tx = Math.Max(0.01f, card.Width / CardWidth);
+			float ty = Math.Max(0.01f, card.Height / CardHeight);
+			controls = new Vector2(card.X + card.Width * 0.5f, card.Y + ControlsY * ty);
+			int pad = Math.Max(10, (int)(18f * tx));
+			int seekY = card.Y + (int)(SeekY * ty);
+			seek = new Rectangle(card.X + pad, seekY - 8, Math.Max(8, card.Width - pad * 2), 20);
+			shuffle = new Vector2(card.X + 28f * tx, controls.Y);
+			loop = new Vector2(card.Right - 28f * tx, controls.Y);
+		}
+
+		private static bool HitCtrl(Vector2 center, float radius) =>
+			RoundButton.Hit(center, radius).Contains(Main.mouseX, Main.mouseY);
 
 		private static void DrawCollapsed(SpriteBatch spriteBatch, Vector2 center, float fade, float visible, float pulse)
 		{
@@ -215,15 +240,16 @@ namespace WallpaperEngine.Audio
 				return;
 
 			float textAlpha = MathHelper.Clamp((ease - 0.38f) / 0.4f, 0f, 1f) * alpha;
+			LayoutCard(card, out Vector2 controls, out Rectangle seekHit, out Vector2 shuffle, out Vector2 loop, out float tx);
 			MenuTrack track = WePlaylist.Current;
 			var font = FontAssets.MouseText.Value;
-			DrawCentered(spriteBatch, font, track.Title, new Vector2(card.X + card.Width * 0.5f, card.Y + 14f), TextMain * textAlpha, 0.92f);
-			DrawCentered(spriteBatch, font, track.Artist, new Vector2(card.X + card.Width * 0.5f, card.Y + 34f), TextSub * textAlpha, 0.72f);
+			DrawCentered(spriteBatch, font, track.Title, new Vector2(card.X + card.Width * 0.5f, card.Y + 14f * (card.Height / CardHeight)), TextMain * textAlpha, 0.92f);
+			DrawCentered(spriteBatch, font, track.Artist, new Vector2(card.X + card.Width * 0.5f, card.Y + 34f * (card.Height / CardHeight)), TextSub * textAlpha, 0.72f);
 
 			float duration = Math.Max(WePlaylist.GetDuration(), 0.01f);
 			float time = MathHelper.Clamp(WePlaylist.GetDisplayTime(), 0f, duration);
 			float progress = time / duration;
-			var bar = new Rectangle(card.X + 22, card.Y + (int)SeekY, card.Width - 44, 4);
+			var bar = new Rectangle(seekHit.X + 4, seekHit.Y + 8, Math.Max(1, seekHit.Width - 8), 4);
 			WeDraw.Fill(spriteBatch, bar, Color.White * (0.18f * textAlpha));
 			WeDraw.Fill(spriteBatch, new Rectangle(bar.X, bar.Y, Math.Max(1, (int)(bar.Width * progress)), bar.Height), WeAccent.Mid * textAlpha);
 			spriteBatch.Draw(WeDraw.Circle(), new Vector2(bar.X + bar.Width * progress, bar.Y + 2f), null, TextMain * textAlpha, 0f, WeDraw.Circle().Size() * 0.5f, 8f / WeDraw.Circle().Width, SpriteEffects.None, 0f);
@@ -232,30 +258,29 @@ namespace WallpaperEngine.Audio
 			Vector2 endSize = font.MeasureString(end) * 0.7f;
 			ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, end, new Vector2(bar.Right - endSize.X, bar.Y + 8f), TextSub * textAlpha, 0f, Vector2.Zero, new Vector2(0.7f));
 
-			Vector2 controls = new(card.X + card.Width * 0.5f, card.Y + ControlsY);
-			DrawGlyph(spriteBatch, controls + new Vector2(-ExtraOffset, 0f), SkipRadius, WeIcons.Playlist, "P", textAlpha, false);
-			DrawSkip(spriteBatch, controls + new Vector2(-SkipOffset, 0f), -1, textAlpha);
-			RoundButton.Draw(spriteBatch, controls, PlayRadius, textAlpha);
-			DrawPlayPause(spriteBatch, controls, 10f, Paint(controls, PlayRadius, textAlpha), WePlaylist.IsPaused);
-			DrawSkip(spriteBatch, controls + new Vector2(SkipOffset, 0f), 1, textAlpha);
-			DrawGlyph(spriteBatch, controls + new Vector2(ExtraOffset, 0f), SkipRadius, WeIcons.Upload, "U", textAlpha, false);
-			DrawGlyph(spriteBatch, new Vector2(card.X + 28f, controls.Y), LoopRadius, WeIcons.Shuffle, "S", textAlpha, WePlaylist.ShuffleEnabled);
-			DrawGlyph(spriteBatch, new Vector2(card.Right - 28f, controls.Y), LoopRadius, WeIcons.Loop, "L", textAlpha, WePlaylist.LoopEnabled);
+			DrawGlyph(spriteBatch, controls + new Vector2(-ExtraOffset * tx, 0f), SkipRadius * tx, WeIcons.Playlist, "P", textAlpha, false);
+			DrawSkip(spriteBatch, controls + new Vector2(-SkipOffset * tx, 0f), -1, textAlpha, SkipRadius * tx);
+			RoundButton.Draw(spriteBatch, controls, PlayRadius * tx, textAlpha);
+			DrawPlayPause(spriteBatch, controls, 10f * tx, Paint(controls, PlayRadius * tx, textAlpha), WePlaylist.IsPaused);
+			DrawSkip(spriteBatch, controls + new Vector2(SkipOffset * tx, 0f), 1, textAlpha, SkipRadius * tx);
+			DrawGlyph(spriteBatch, controls + new Vector2(ExtraOffset * tx, 0f), SkipRadius * tx, WeIcons.Upload, "U", textAlpha, false);
+			DrawGlyph(spriteBatch, shuffle, LoopRadius * tx, WeIcons.Shuffle, "S", textAlpha, WePlaylist.ShuffleEnabled);
+			DrawGlyph(spriteBatch, loop, LoopRadius * tx, WeIcons.Loop, "L", textAlpha, WePlaylist.LoopEnabled);
 		}
 
-		private static void DrawSkip(SpriteBatch spriteBatch, Vector2 center, int direction, float alpha)
+		private static void DrawSkip(SpriteBatch spriteBatch, Vector2 center, int direction, float alpha, float radius)
 		{
 			Texture2D icon = WeIcons.Get(direction < 0 ? WeIcons.Prev : WeIcons.Next);
 			if (icon != null) {
-				RoundButton.DrawIcon(spriteBatch, center, SkipRadius, icon, 0f, alpha);
+				RoundButton.DrawIcon(spriteBatch, center, radius, icon, 0f, alpha);
 				return;
 			}
 
-			RoundButton.Draw(spriteBatch, center, SkipRadius, alpha);
-			Color color = Paint(center, SkipRadius, alpha);
+			RoundButton.Draw(spriteBatch, center, radius, alpha);
+			Color color = Paint(center, radius, alpha);
 			Texture2D pixel = WeDraw.Pixel;
-			const int halfH = 6;
-			const int triW = 8;
+			int halfH = Math.Max(4, (int)(radius * 0.46f));
+			int triW = Math.Max(5, (int)(radius * 0.62f));
 			int cy = (int)center.Y;
 			int baseX = (int)center.X - direction * 2;
 			for (int dy = -halfH; dy <= halfH; dy++) {

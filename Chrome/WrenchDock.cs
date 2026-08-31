@@ -24,6 +24,7 @@ namespace WallpaperEngine.Chrome
 		private static int _hover = -1;
 		private static bool _frameInput;
 		private static bool _mouseHeld;
+		private static bool _holdLock;
 
 		internal static bool Busy => HoverBar() || _hover >= 0;
 
@@ -58,8 +59,7 @@ namespace WallpaperEngine.Chrome
 				return;
 
 			_frameInput = true;
-			bool pressed = Main.mouseLeft && !_mouseHeld;
-			_mouseHeld = Main.mouseLeft;
+			bool pressed = WeInput.Edge(ref _mouseHeld, ref _holdLock);
 			if (!WeModMenu.OnTitle)
 				return;
 
@@ -77,8 +77,7 @@ namespace WallpaperEngine.Chrome
 				return;
 
 			WrenchHub.Activate(WrenchHub.Actions[_hover]);
-			Main.mouseLeftRelease = false;
-			Main.blockMouse = true;
+			WeInput.LockHold(ref _holdLock);
 			if (!WeSave.Data.WrenchOpened) {
 				WeSave.Data.WrenchOpened = true;
 				WeSave.Save();

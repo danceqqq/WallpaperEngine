@@ -23,6 +23,7 @@ namespace WallpaperEngine.Layout
 		private static bool _panning;
 		private static bool _frameInput;
 		private static bool _mouseHeld;
+		private static bool _holdLock;
 		private static string _selected = "";
 		private static Vector2 _dragOffset;
 		private static Vector2 _lastMouse;
@@ -173,8 +174,7 @@ namespace WallpaperEngine.Layout
 				scaled.Customized = true;
 			}
 
-			bool pressed = Main.mouseLeft && !_mouseHeld;
-			_mouseHeld = Main.mouseLeft;
+			bool pressed = WeInput.Edge(ref _mouseHeld, ref _holdLock);
 
 			if (ToolbarHit()) {
 				Main.blockMouse = true;
@@ -206,8 +206,7 @@ namespace WallpaperEngine.Layout
 			if (WeSettings.Current.Wallpaper == WallpaperKind.Image && WeArt.TryGetWallpaper(out _)) {
 					_panning = true;
 					_lastMouse = new Vector2(Main.mouseX, Main.mouseY);
-					Main.mouseLeftRelease = false;
-					Main.blockMouse = true;
+					WeInput.LockHold(ref _holdLock);
 				}
 			}
 		}
@@ -293,7 +292,7 @@ namespace WallpaperEngine.Layout
 				Begin();
 			}
 
-			Main.mouseLeftRelease = false;
+			WeInput.LockHold(ref _holdLock);
 		}
 
 		private static bool ToolbarHit() =>
@@ -349,13 +348,12 @@ namespace WallpaperEngine.Layout
 			_dragging = true;
 			Rectangle hit = SceneGraph.Hit(id);
 			_dragOffset = new Vector2(Main.mouseX, Main.mouseY) - hit.Center.ToVector2();
-			Main.mouseLeftRelease = false;
-			Main.blockMouse = true;
+			WeInput.LockHold(ref _holdLock);
 		}
 
 		private static void UpdateDrag()
 		{
-			if (!Main.mouseLeft) {
+			if (!WeInput.LeftDown) {
 				FinishDrag();
 				return;
 			}
@@ -380,7 +378,7 @@ namespace WallpaperEngine.Layout
 
 		private static void UpdatePan()
 		{
-			if (!Main.mouseLeft) {
+			if (!WeInput.LeftDown) {
 				_panning = false;
 				return;
 			}

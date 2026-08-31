@@ -1,8 +1,14 @@
+v0.8
+- Holding player / hub / panel buttons no longer repeats like an autoclicker. One press, one action until you release
+
 v0.7
 - Discord wide banner lists voice channels (with Join) and scrolls when they do not fit. Member list puts a Join pill on anyone in voice
 - Discord cards use an accent edge, header rule, and channel grouping instead of a flat grey box
 - Widgets panel: live-preview tiles. Hover an active tile to slide its settings open; the list below moves and scroll follows
 - Open customize panels no longer click through into the hub, widgets, or menu buttons underneath (picking a wallpaper will not also open Music)
+- tModLoader / Terraria social icons sit at their native menu spots again (bottom-left / top-left). Old top-right layout saves are cleared
+- Discord voice line follows occupied members, not the first channel in widget.json. Polls a bit faster and skips HTTP cache
+- Player widget next / previous / pause / loop / shuffle register one click (they were double-toggling and looked dead). Loop still repeats the current track; shuffle is used when you skip or when a track ends
 
 v0.6
 - Borrowed Catalyst logos use Terraria's own logo bounce (rotation + scale)

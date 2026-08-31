@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -55,12 +57,14 @@ namespace WallpaperEngine.Widgets
 
 	internal static class DiscordFeed
 	{
-		private const int PollOkSeconds = 15;
+		private const int PollOkSeconds = 10;
 		private const int PollRetrySeconds = 8;
+		private const int FlightGuardSeconds = 20;
 		private static readonly HttpClient Http;
 		private static readonly Regex SnowflakeRun = new(@"\d{17,20}", RegexOptions.Compiled);
 
 		private static DateTime _nextFetch;
+		private static DateTime _flightStarted;
 		private static bool _inFlight;
 		private static bool _migrated;
 		private static string _fetchId = "";
@@ -71,8 +75,14 @@ namespace WallpaperEngine.Widgets
 
 		static DiscordFeed()
 		{
-			Http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-			Http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WallpaperEngine-tModLoader/0.7");
+			var handler = new SocketsHttpHandler {
+				PooledConnectionLifetime = TimeSpan.FromMinutes(1),
+				AutomaticDecompression = DecompressionMethods.All
+			};
+			Http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
+			Http.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true, NoStore = true };
+			Http.DefaultRequestHeaders.Pragma.ParseAdd("no-cache");
+			Http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WallpaperEngine-tModLoader/0.8");
 			Http.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
 		}
 
@@ -170,7 +180,13 @@ namespace WallpaperEngine.Widgets
 				return;
 			}
 
-			if (_inFlight || DateTime.UtcNow < _nextFetch)
+			if (_inFlight) {
+				if ((DateTime.UtcNow - _flightStarted).TotalSeconds < FlightGuardSeconds)
+					return;
+				_inFlight = false;
+			}
+
+			if (DateTime.UtcNow < _nextFetch)
 				return;
 
 			StartFetch(_guildId);
@@ -254,6 +270,7 @@ namespace WallpaperEngine.Widgets
 				return;
 
 			_inFlight = true;
+			_flightStarted = DateTime.UtcNow;
 			_fetchId = id;
 			if (_status != DiscordFeedStatus.Ok)
 				_status = DiscordFeedStatus.Loading;
@@ -261,7 +278,8 @@ namespace WallpaperEngine.Widgets
 			Task.Run(async () => {
 				int delay = PollOkSeconds;
 				try {
-					using HttpResponseMessage response = await Http.GetAsync("https://discord.com/api/guilds/" + id + "/widget.json");
+					string url = "https://discord.com/api/guilds/" + id + "/widget.json?t=" + DateTime.UtcNow.Ticks;
+					using HttpResponseMessage response = await GetNoCache(url).ConfigureAwait(false);
 					if (_fetchId != id)
 						return;
 
@@ -344,16 +362,12 @@ namespace WallpaperEngine.Widgets
 				var channels = new Dictionary<string, string>(StringComparer.Ordinal);
 				if (root.TryGetProperty("channels", out JsonElement chans) && chans.ValueKind == JsonValueKind.Array) {
 					foreach (JsonElement ch in chans.EnumerateArray()) {
-						string cid = Str(ch, "id");
+						string cid = IdOf(ch, "id");
 						string cname = Str(ch, "name");
 						if (cid.Length == 0)
 							continue;
 						if (cname.Length > 0)
 							channels[cid] = cname;
-						if (string.IsNullOrEmpty(snap.VoiceChannelId))
-							snap.VoiceChannelId = cid;
-						if (string.IsNullOrEmpty(snap.Voice) && cname.Length > 0)
-							snap.Voice = cname;
 					}
 				}
 
@@ -369,15 +383,12 @@ namespace WallpaperEngine.Widgets
 						if (member.Name.Length == 0)
 							continue;
 
-						string channelId = Str(item, "channel_id");
+						string channelId = IdOf(item, "channel_id");
 						member.ChannelId = channelId;
 						if (channelId.Length > 0) {
 							member.Voice = channels.TryGetValue(channelId, out string voice) && voice.Length > 0
 								? voice
 								: "Voice";
-							snap.VoiceChannelId = channelId;
-							if (string.IsNullOrEmpty(snap.Voice) || snap.Voice == "Voice")
-								snap.Voice = member.Voice;
 						}
 
 						string url = Str(item, "avatar_url");
@@ -401,6 +412,7 @@ namespace WallpaperEngine.Widgets
 				}
 
 				snap.Channels = chanList.ToArray();
+				PickOccupiedVoice(snap);
 				if (string.IsNullOrEmpty(snap.Name))
 					snap.Name = "Discord";
 				return true;
@@ -408,6 +420,43 @@ namespace WallpaperEngine.Widgets
 			catch {
 				return false;
 			}
+		}
+
+		private static void PickOccupiedVoice(DiscordSnap snap)
+		{
+			snap.Voice = "";
+			snap.VoiceChannelId = "";
+			if (snap.Members == null)
+				return;
+
+			var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+			string bestId = "";
+			string bestName = "";
+			int bestCount = 0;
+			for (int i = 0; i < snap.Members.Length; i++) {
+				DiscordMember member = snap.Members[i];
+				if (member == null || string.IsNullOrEmpty(member.ChannelId))
+					continue;
+				counts.TryGetValue(member.ChannelId, out int n);
+				n++;
+				counts[member.ChannelId] = n;
+				if (n < bestCount)
+					continue;
+				bestCount = n;
+				bestId = member.ChannelId;
+				bestName = member.Voice;
+			}
+
+			snap.VoiceChannelId = bestId;
+			snap.Voice = bestName;
+		}
+
+		private static async Task<HttpResponseMessage> GetNoCache(string url)
+		{
+			using var req = new HttpRequestMessage(HttpMethod.Get, url);
+			req.Headers.CacheControl = new CacheControlHeaderValue { NoCache = true, NoStore = true };
+			req.Headers.Pragma.ParseAdd("no-cache");
+			return await Http.SendAsync(req).ConfigureAwait(false);
 		}
 
 		private static int CompareMembers(DiscordMember a, DiscordMember b)
@@ -462,7 +511,7 @@ namespace WallpaperEngine.Widgets
 				if (string.IsNullOrEmpty(code))
 					code = InviteCodeFrom(snap.Invite);
 				if (!string.IsNullOrEmpty(code)) {
-					using HttpResponseMessage response = await Http.GetAsync("https://discord.com/api/invites/" + Uri.EscapeDataString(code));
+					using HttpResponseMessage response = await GetNoCache("https://discord.com/api/invites/" + Uri.EscapeDataString(code) + "?t=" + DateTime.UtcNow.Ticks).ConfigureAwait(false);
 					if (_fetchId != id)
 						return;
 					if (response.IsSuccessStatusCode) {
@@ -510,7 +559,7 @@ namespace WallpaperEngine.Widgets
 				if (!root.TryGetProperty("channel", out JsonElement channel))
 					return;
 
-				string cid = Str(channel, "id");
+				string cid = IdOf(channel, "id");
 				string cname = Str(channel, "name");
 				int type = IntOf(channel, "type");
 				if (cid.Length == 0)
@@ -670,6 +719,17 @@ namespace WallpaperEngine.Widgets
 			if (!el.TryGetProperty(name, out JsonElement value) || value.ValueKind != JsonValueKind.String)
 				return "";
 			return value.GetString() ?? "";
+		}
+
+		private static string IdOf(JsonElement el, string name)
+		{
+			if (!el.TryGetProperty(name, out JsonElement value))
+				return "";
+			if (value.ValueKind == JsonValueKind.String)
+				return value.GetString() ?? "";
+			if (value.ValueKind == JsonValueKind.Number)
+				return value.TryGetInt64(out long n) ? n.ToString() : value.GetRawText();
+			return "";
 		}
 
 		private static int IntOf(JsonElement el, string name)

@@ -35,6 +35,7 @@ namespace WallpaperEngine.UI
 		private static float _scroll;
 		private static bool _frameInput;
 		private static bool _mouseHeld;
+		private static bool _holdLock;
 		private static int _lastWheel;
 		private static string _dragSlider;
 		private static bool _ateInput;
@@ -95,8 +96,7 @@ namespace WallpaperEngine.UI
 				return;
 			_frameInput = true;
 
-			bool pressed = Main.mouseLeft && !_mouseHeld;
-			_mouseHeld = Main.mouseLeft;
+			bool pressed = WeInput.Edge(ref _mouseHeld, ref _holdLock);
 			if (!IsOpen)
 				return;
 
@@ -110,7 +110,7 @@ namespace WallpaperEngine.UI
 			_lastWheel = wheel;
 
 			if (_dragSlider != null) {
-				if (Main.mouseLeft)
+				if (WeInput.LeftDown)
 					ApplySlider(_dragSlider);
 				else
 					_dragSlider = null;
@@ -122,12 +122,12 @@ namespace WallpaperEngine.UI
 
 			if (!panel.Contains(Main.mouseX, Main.mouseY)) {
 				Close();
-				Main.mouseLeftRelease = false;
+				WeInput.LockHold(ref _holdLock);
 				return;
 			}
 
 			HandleClicks(panel);
-			Main.mouseLeftRelease = false;
+			WeInput.LockHold(ref _holdLock);
 		}
 
 		internal static void EndFrame()
