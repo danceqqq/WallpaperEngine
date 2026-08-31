@@ -1,0 +1,1 @@
+A fully customizable tModLoader title theme. Starts as vanilla tML — open the wrench to change wallpapers, music, logo, widgets, layout, and the Windows window chrome. Logo and sky from other mods mix independently. Custom tracks can be deleted from the music panel.

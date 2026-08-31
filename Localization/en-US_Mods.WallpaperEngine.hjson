@@ -1,0 +1,136 @@
+DisplayName: Wallpaper Engine
+MenuTheme: Wallpaper Engine
+
+UI: {
+	Wrench: Customize menu
+	BtnLogoPos: Move logo
+	BtnWallpaper: Change wallpaper
+	BtnMusic: Change music
+	BtnWidgets: Widgets
+	BtnLogo: Change logo
+	BtnLayout: Move elements
+	BtnClient: Client settings
+	BtnClean: Hide version clutter
+	SplashTitle: This is your menu
+	Splash1: It starts as regular tModLoader. Everything you change is optional.
+	Splash2: The circle between the menu buttons and Switch Menu Theme opens wallpapers, music, logo, widgets, and layout.
+	Splash3: Add a music player, clock, greeting, or moon phase. One tap hides version clutter. Drag, resize, or hide any element.
+	GotIt: Got it
+	DontShow: Don't show this again
+	SaveLayout: Save layout
+	CancelLayout: Cancel
+	ResetVanilla: Reset to vanilla
+	ScrollToResize: Scroll to resize
+	DragToPan: Drag the wallpaper to pan
+	SnapCenter: Center
+	HiddenLayers: Hidden elements
+	Restore: Restore
+	CannotHide: This element can only be moved
+	VanillaSky: Vanilla sky
+	SolidColor: Solid color
+	Gradient: Gradient
+	FitCover: Fill screen
+	FitContain: Fit inside
+	FitStretch: Stretch
+	WallpaperParallax: Mouse parallax
+	WallpaperDim: Dim
+	WallpaperVignette: Vignette
+	LivePreview: The menu is a live preview. Drag the mouse to feel parallax.
+	BorrowMix: Logo and sky are separate. A borrowed sky keeps that theme's own background effects.
+	FromMods: From other mods
+	BorrowEmpty: No other menu themes loaded
+	BorrowPending: Still loading...
+	BorrowKindLogo: logo
+	BorrowKindSky: sky + effects
+	BorrowKindStill: sky (still)
+	ToastBorrowGone: That mod is no longer loaded. Restored vanilla.
+	ToastBorrowFail: That menu theme failed to draw, so it was skipped.
+	SceneLayers: Layers  ·  back to front
+	AddImageLayer: Add image layer
+	AddEffectLayer: Add effect
+	ImageLayer: Image layer
+	LayerForeground: Draw in front
+	LayerOpacity: Opacity
+	LayerParallax: Parallax
+	LayerZoom: Zoom
+	LayerUp: Move back
+	LayerDown: Move front
+	RemoveLayer: Remove layer
+	FxStars: Stars
+	FxDust: Dust
+	FxFog: Fog
+	FxGrain: Grain
+	FxScan: Scanlines
+	FxFlies: Fireflies
+	FxClouds: Clouds
+	FxRain: Rain
+	FxBeat: Pulse to music
+	ImportImage: Import image
+	OpenFolder: Open folder
+	VanillaLogo: tModLoader logo
+	HideLogo: Hide logo
+	VanillaMusic: Vanilla title music
+	Silence: Silence
+	ImportSong: Import song
+	NoTracks: No custom tracks yet
+	TrackHint: Click a track to play it. The bin removes it from the library.
+	DeleteTrack: Remove track
+	AddPlayer: Music player
+	AddClock: Clock
+	AddQuote: Greeting / quote
+	AddMoon: Moon phase
+	OpenQuotes: Edit quotes
+	Clock24h: 24-hour time
+	Clock12h: 12-hour time
+	ClockAnalog: Analog
+	ClockDigital: Digital
+	ClockDate: Show date
+	GreetingMorning: Good morning
+	GreetingAfternoon: Good afternoon
+	GreetingEvening: Good evening
+	GreetingNight: Good night
+	MoonPhase0: Full moon
+	MoonPhase1: Waning gibbous
+	MoonPhase2: Third quarter
+	MoonPhase3: Waning crescent
+	MoonPhase4: New moon
+	MoonPhase5: Waxing crescent
+	MoonPhase6: First quarter
+	MoonPhase7: Waxing gibbous
+	Layer_logo: Logo
+	Layer_menuButtons: Menu buttons
+	Layer_themeSwap: Theme switch
+	Layer_socialTerraria: Terraria links
+	Layer_socialTml: tModLoader links
+	Layer_version: Version
+	Layer_news: News
+	Layer_sunMoon: Sun / moon
+	Layer_wrench: Customize
+	Layer_widget_player: Music player
+	Layer_widget_clock: Clock
+	Layer_widget_quote: Greeting
+	Layer_widget_moon: Moon
+	CaptionColor: Title bar color
+	BorderColor: Border color
+	TitleTextColor: Title text color
+	DarkTitleBar: Dark title bar
+	PickIcon: Change window icon
+	ResetChrome: Reset window chrome
+	ShowHelp: Show tutorial
+	BorderlessHint: Title bar colors show in windowed mode.
+	ToastWallpaper: Wallpaper applied
+	ToastLogo: Logo applied
+	ToastMusic: Music applied
+	ToastIcon: Window icon applied
+	ToastChrome: Window colors applied
+	ToastReset: Reset to vanilla
+	ToastWidgetOn: Widget added
+	ToastWidgetOff: Widget removed
+	ToastTrackDeleted: Track removed
+	ToastCleanOn: Version clutter hidden
+	ToastCleanOff: Version clutter restored
+	Red: Red
+	Green: Green
+	Blue: Blue
+	Accent: Accent color
+}

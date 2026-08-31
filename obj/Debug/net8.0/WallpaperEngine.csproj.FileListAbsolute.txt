@@ -1,0 +1,14 @@
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.csproj.AssemblyReference.cache
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.AssemblyInfoInputs.cache
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.AssemblyInfo.cs
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.csproj.CoreCompileInputs.cache
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\bin\Debug\net8.0\WallpaperEngine.deps.json
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\bin\Debug\net8.0\WallpaperEngine.dll
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\bin\Debug\net8.0\WallpaperEngine.pdb
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\bin\Debug\net8.0\NLayer.dll
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\Wallpape.A8762F24.Up2Date
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.dll
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\refint\WallpaperEngine.dll
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\WallpaperEngine.pdb
+C:\Users\myangell\Documents\My Games\Terraria\tModLoader\ModSources\WallpaperEngine\obj\Debug\net8.0\ref\WallpaperEngine.dll

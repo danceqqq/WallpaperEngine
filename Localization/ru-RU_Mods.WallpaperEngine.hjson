@@ -1,0 +1,136 @@
+DisplayName: Wallpaper Engine
+MenuTheme: Wallpaper Engine
+
+UI: {
+	Wrench: Настроить меню
+	BtnLogoPos: Положение лого
+	BtnWallpaper: Изменить обои
+	BtnMusic: Изменить музыку
+	BtnWidgets: Виджеты
+	BtnLogo: Изменить лого
+	BtnLayout: Положение элементов
+	BtnClient: Настройки клиента
+	BtnClean: Скрыть системный текст
+	SplashTitle: Это твоё меню
+	Splash1: Сначала всё как в обычном tModLoader. Любое изменение — по желанию.
+	Splash2: Круг между кнопками меню и сменой темы открывает обои, музыку, лого, виджеты и расстановку.
+	Splash3: Плеер, часы, приветствие или фаза луны — как виджеты. Одним нажатием прячутся версии и соцсети. Любой элемент можно двигать, масштабировать или скрыть.
+	GotIt: Понятно
+	DontShow: Больше не показывать
+	SaveLayout: Сохранить
+	CancelLayout: Отмена
+	ResetVanilla: Вернуть ваниль
+	ScrollToResize: Колёсико — размер
+	DragToPan: Перетаскивай обои, чтобы сдвинуть
+	SnapCenter: Центр
+	HiddenLayers: Скрытые элементы
+	Restore: Вернуть
+	CannotHide: Этот элемент можно только двигать
+	VanillaSky: Ванильное небо
+	SolidColor: Сплошной цвет
+	Gradient: Градиент
+	FitCover: На весь экран
+	FitContain: Вписать
+	FitStretch: Растянуть
+	WallpaperParallax: Параллакс от мыши
+	WallpaperDim: Затемнение
+	WallpaperVignette: Виньетка
+	LivePreview: Меню — это live preview. Поводи мышью, чтобы увидеть параллакс.
+	BorrowMix: Лого и небо берутся из темы отдельно. Вместе с небом подтягиваются её собственные эффекты фона.
+	FromMods: Из других модов
+	BorrowEmpty: Других тем меню нет
+	BorrowPending: Ещё загружается...
+	BorrowKindLogo: лого
+	BorrowKindSky: небо + эффекты
+	BorrowKindStill: небо (кадр)
+	ToastBorrowGone: Мод больше не загружен. Вернули ваниль.
+	ToastBorrowFail: Тема другого мода не отрисовалась и была пропущена.
+	SceneLayers: Слои  ·  сзади вперёд
+	AddImageLayer: Слой картинки
+	AddEffectLayer: Добавить эффект
+	ImageLayer: Слой картинки
+	LayerForeground: Рисовать спереди
+	LayerOpacity: Прозрачность
+	LayerParallax: Параллакс
+	LayerZoom: Масштаб
+	LayerUp: Назад
+	LayerDown: Вперёд
+	RemoveLayer: Убрать слой
+	FxStars: Звёзды
+	FxDust: Пыль
+	FxFog: Туман
+	FxGrain: Зерно
+	FxScan: Развёртка
+	FxFlies: Светлячки
+	FxClouds: Облака
+	FxRain: Дождь
+	FxBeat: Пульс под музыку
+	ImportImage: Импорт картинки
+	OpenFolder: Открыть папку
+	VanillaLogo: Лого tModLoader
+	HideLogo: Скрыть лого
+	VanillaMusic: Ванильная музыка меню
+	Silence: Без музыки
+	ImportSong: Импорт трека
+	NoTracks: Пока нет своих треков
+	TrackHint: Нажми трек, чтобы включить. Корзина удаляет его из библиотеки.
+	DeleteTrack: Удалить трек
+	AddPlayer: Музыкальный плеер
+	AddClock: Часы
+	AddQuote: Приветствие / цитата
+	AddMoon: Фаза луны
+	OpenQuotes: Редактировать цитаты
+	Clock24h: 24 часа
+	Clock12h: 12 часов
+	ClockAnalog: Аналоговые
+	ClockDigital: Цифровые
+	ClockDate: Показывать дату
+	GreetingMorning: Доброе утро
+	GreetingAfternoon: Добрый день
+	GreetingEvening: Добрый вечер
+	GreetingNight: Доброй ночи
+	MoonPhase0: Полная луна
+	MoonPhase1: Убывающая
+	MoonPhase2: Последняя четверть
+	MoonPhase3: Старая луна
+	MoonPhase4: Новолуние
+	MoonPhase5: Молодая луна
+	MoonPhase6: Первая четверть
+	MoonPhase7: Растущая
+	Layer_logo: Лого
+	Layer_menuButtons: Кнопки меню
+	Layer_themeSwap: Смена темы
+	Layer_socialTerraria: Ссылки Terraria
+	Layer_socialTml: Ссылки tModLoader
+	Layer_version: Версия
+	Layer_news: Новости
+	Layer_sunMoon: Солнце / луна
+	Layer_wrench: Настройка
+	Layer_widget_player: Плеер
+	Layer_widget_clock: Часы
+	Layer_widget_quote: Приветствие
+	Layer_widget_moon: Луна
+	CaptionColor: Цвет заголовка окна
+	BorderColor: Цвет рамки
+	TitleTextColor: Цвет текста заголовка
+	DarkTitleBar: Тёмная шапка окна
+	PickIcon: Иконка окна
+	ResetChrome: Сбросить оформление окна
+	ShowHelp: Показать подсказку
+	BorderlessHint: Цвет рамки виден в оконном режиме.
+	ToastWallpaper: Обои применены
+	ToastLogo: Лого применено
+	ToastMusic: Музыка применена
+	ToastIcon: Иконка окна изменена
+	ToastChrome: Цвета окна применены
+	ToastReset: Возвращён ванильный вид
+	ToastWidgetOn: Виджет добавлен
+	ToastWidgetOff: Виджет убран
+	ToastTrackDeleted: Трек удалён
+	ToastCleanOn: Системный текст скрыт
+	ToastCleanOff: Системный текст возвращён
+	Red: Красный
+	Green: Зелёный
+	Blue: Синий
+	Accent: Акцент
+}

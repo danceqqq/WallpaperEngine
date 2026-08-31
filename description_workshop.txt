@@ -1,0 +1,28 @@
+[h1]Wallpaper Engine[/h1]
+A fully customizable tModLoader title screen. It starts as regular tML. Everything you change is optional.
+
+[h2]How it works[/h2]
+Select [b]Wallpaper Engine[/b] at the bottom of the title screen. The wrench between the menu buttons and Switch Menu Theme opens wallpapers, music, logo, widgets, layout, and Windows window chrome.
+
+Logo and wallpaper are independent. You can take a logo from one mod menu and a sky (with that theme's own background effects) from another.
+
+[h2]Features[/h2]
+[list]
+[*] Import your own PNG/JPG wallpapers and logos
+[*] Borrow skies and logos from other loaded menu themes (Calamity, Infernum, Fables, Wrath of the Gods, Catalyst, and others)
+[*] Layer images and effects (stars, fog, rain, beat pulse, and more)
+[*] Music player with custom ogg/mp3/wav, shuffle, loop, and a delete button per track
+[*] Clock, greeting, and moon-phase widgets
+[*] Drag, scale, or hide title-screen elements
+[*] Recolor the tModLoader window caption and border (client)
+[/list]
+
+[h2]Borrowed themes[/h2]
+Logo and wallpaper are taken from the other mod's menu theme as two independent pieces. The sky is that theme's own background pass (shaders, clouds, animation). The logo is that theme's logo pass. Wallpaper Engine stays selected; the other theme is never left as the current menu.
+
+[h2]Notes[/h2]
+Client-side. Some menus only exist after their unlock (for example after a boss). Previews load asynchronously from the other mod's files.
+
+Workshop comments are not a support channel for other mods' crashes. If a borrowed theme fails to draw, Wallpaper Engine skips it and restores vanilla.
+
+Created by myangell.

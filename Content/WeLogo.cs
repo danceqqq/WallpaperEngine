@@ -1,0 +1,92 @@
+using System;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Terraria;
+using Terraria.ModLoader;
+using WallpaperEngine.Core;
+using WallpaperEngine.Grab;
+using WallpaperEngine.Layout;
+using WallpaperEngine.UI;
+
+namespace WallpaperEngine.Content
+{
+	internal static class WeLogo
+	{
+		internal static Vector2 Anchor => SceneGraph.Pixel(SceneGraph.Logo);
+		internal static float Scale => SceneGraph.ScaleOf(SceneGraph.Logo);
+
+		internal static Rectangle HitRect()
+		{
+			Texture2D tex = CurrentTexture();
+			if (tex == null)
+				return Around(Anchor, 420f * Scale, 140f * Scale);
+
+			float s = DrawScale(tex);
+			return new Rectangle(
+				(int)(Anchor.X - tex.Width * s * 0.5f),
+				(int)(Anchor.Y - tex.Height * s * 0.5f),
+				Math.Max(1, (int)(tex.Width * s)),
+				Math.Max(1, (int)(tex.Height * s)));
+		}
+
+		internal static Texture2D CurrentTexture()
+		{
+			if (WeSave.Data.Logo == LogoKind.Hidden)
+				return null;
+			if (WeSave.Data.Logo == LogoKind.Custom && WeArt.TryGetLogo(out Texture2D custom))
+				return custom;
+			if (WeSave.Data.Logo == LogoKind.Borrowed)
+				return WeCatalog.LogoTexture(WeSave.Data.LogoId);
+			return ModContent.GetInstance<WeModMenu>()?.Logo?.Value;
+		}
+
+		internal static float DrawScale(Texture2D tex)
+		{
+			if (tex == null)
+				return Scale;
+			float cap = MathHelper.Min(520f, Main.screenWidth * 0.38f);
+			return cap / Math.Max(1, tex.Width) * Scale;
+		}
+
+		internal static void DrawCustom(SpriteBatch spriteBatch, float fade)
+		{
+			if (!SceneGraph.Visible(SceneGraph.Logo))
+				return;
+
+			if (WeSave.Data.Logo == LogoKind.Borrowed &&
+			    WeBorrow.TryDrawLogo(spriteBatch, Anchor, Scale, fade))
+				return;
+
+			Texture2D tex = CurrentTexture();
+			if (tex == null)
+				return;
+
+			float scale = DrawScale(tex);
+			if (WeSave.Data.Logo == LogoKind.Borrowed) {
+				WeDraw.WithPoint(spriteBatch, () => {
+					spriteBatch.Draw(tex, Anchor, null, Color.White * fade, 0f, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+				});
+				return;
+			}
+
+			WeDraw.WithLinear(spriteBatch, () => {
+				spriteBatch.Draw(tex, Anchor, null, Color.White * fade, 0f, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+			});
+		}
+
+		internal static bool ShouldDrawVanilla(ref Vector2 logoDrawCenter, ref float logoScale)
+		{
+			if (!SceneGraph.Visible(SceneGraph.Logo) || WeSave.Data.Logo == LogoKind.Hidden)
+				return false;
+			if (WeSave.Data.Logo is LogoKind.Custom or LogoKind.Borrowed)
+				return false;
+
+			logoDrawCenter = Anchor;
+			logoScale *= Scale;
+			return true;
+		}
+
+		private static Rectangle Around(Vector2 pos, float w, float h) =>
+			new((int)(pos.X - w * 0.5f), (int)(pos.Y - h * 0.5f), (int)w, (int)h);
+	}
+}
