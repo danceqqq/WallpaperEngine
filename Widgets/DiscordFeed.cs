@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,6 +15,7 @@ namespace WallpaperEngine.Widgets
 	internal enum DiscordFeedStatus
 	{
 		Empty,
+		Typing,
 		Loading,
 		Ok,
 		NeedWidget,
@@ -42,9 +44,11 @@ namespace WallpaperEngine.Widgets
 	{
 		private const int PollSeconds = 45;
 		private static readonly HttpClient Http;
+		private static readonly Regex SnowflakeRun = new(@"\d{17,20}", RegexOptions.Compiled);
 
 		private static DateTime _nextFetch;
 		private static bool _inFlight;
+		private static bool _migrated;
 		private static string _fetchId = "";
 		private static string _guildId = "";
 		private static DiscordSnap _snap = new();
@@ -60,7 +64,7 @@ namespace WallpaperEngine.Widgets
 
 		internal static string GuildId => _guildId;
 		internal static bool HasGuildId => IsSnowflake(_guildId);
-		internal static DiscordSnap Snap => _snap;
+		internal static DiscordSnap Snap => _snap ?? new DiscordSnap();
 		internal static DiscordFeedStatus Status => _status;
 
 		internal static void Unload()
@@ -72,67 +76,83 @@ namespace WallpaperEngine.Widgets
 			_status = DiscordFeedStatus.Empty;
 		}
 
-		internal static void EnsureFile()
+		internal static string ExtractId(string raw)
 		{
-			try {
-				WeSave.EnsureFolders();
-				if (File.Exists(WeSave.DiscordPath))
-					return;
+			if (string.IsNullOrWhiteSpace(raw))
+				return "";
 
-				string id = IsSnowflake(WeSave.Data.DiscordGuildId) ? WeSave.Data.DiscordGuildId : "";
-				File.WriteAllText(WeSave.DiscordPath,
-					"# Wallpaper Engine — Discord server widget\n" +
-					"#\n" +
-					"# EN\n" +
-					"# 1. Discord → User Settings → Advanced → enable Developer Mode\n" +
-					"# 2. Right-click your server icon in the sidebar → Copy Server ID\n" +
-					"# 3. Paste only that number on the next empty line (17–20 digits)\n" +
-					"# 4. Server Settings → Widget → Enable Server Widget\n" +
-					"#    (optional: pick an invite channel so Join Voice works)\n" +
-					"#\n" +
-					"# RU\n" +
-					"# 1. Discord → Настройки пользователя → Дополнительно → Режим разработчика\n" +
-					"# 2. ПКМ по иконке сервера слева → Копировать ID сервера\n" +
-					"# 3. Вставь только число на свободной строке (17–20 цифр)\n" +
-					"# 4. Настройки сервера → Виджет → включи виджет сервера\n" +
-					"#    (по желанию: канал приглашения, чтобы работала кнопка «В голос»)\n" +
-					"#\n" +
-					id + (string.IsNullOrEmpty(id) ? "" : "\n"));
-			}
-			catch {
-			}
+			string digits = DigitsOnly(raw, 24);
+			if (IsSnowflake(digits))
+				return digits.Length > 20 ? digits[..20] : digits;
+
+			Match match = SnowflakeRun.Match(raw);
+			return match.Success && IsSnowflake(match.Value) ? match.Value : DigitsOnly(raw, 20);
 		}
 
-		internal static void ReloadId()
+		internal static string DigitsOnly(string raw, int max)
 		{
-			string parsed = ReadIdFromFile();
-			if (string.IsNullOrEmpty(parsed))
-				parsed = WeSave.Data.DiscordGuildId ?? "";
+			if (string.IsNullOrEmpty(raw))
+				return "";
 
-			parsed = parsed.Trim();
-			if (_guildId == parsed)
+			var buffer = new char[Math.Min(max, raw.Length)];
+			int n = 0;
+			for (int i = 0; i < raw.Length && n < max; i++) {
+				if (raw[i] >= '0' && raw[i] <= '9')
+					buffer[n++] = raw[i];
+			}
+
+			return n == 0 ? "" : new string(buffer, 0, n);
+		}
+
+		internal static bool IsSnowflake(string id)
+		{
+			if (string.IsNullOrEmpty(id) || id.Length < 17 || id.Length > 20)
+				return false;
+			for (int i = 0; i < id.Length; i++) {
+				if (id[i] < '0' || id[i] > '9')
+					return false;
+			}
+
+			return true;
+		}
+
+		internal static void SetGuildId(string id)
+		{
+			id = ExtractId(id ?? "");
+			if (_guildId == id && (WeSave.Data.DiscordGuildId ?? "") == id)
 				return;
 
-			_guildId = parsed;
-			if (IsSnowflake(_guildId) && WeSave.Data.DiscordGuildId != _guildId) {
-				WeSave.Data.DiscordGuildId = _guildId;
+			_guildId = id;
+			if (WeSave.Data.DiscordGuildId != id) {
+				WeSave.Data.DiscordGuildId = id;
 				WeSave.Save();
 			}
 
+			_fetchId = id;
 			_nextFetch = DateTime.MinValue;
-			if (!IsSnowflake(_guildId)) {
-				_status = DiscordFeedStatus.Empty;
-				_snap = new DiscordSnap();
+			_snap = new DiscordSnap();
+			DisposeAvatars();
+			if (!IsSnowflake(id)) {
+				_status = string.IsNullOrEmpty(id) ? DiscordFeedStatus.Empty : DiscordFeedStatus.Typing;
+				return;
 			}
+
+			_status = DiscordFeedStatus.Loading;
+			if (WeSave.Data.DiscordWidget)
+				StartFetch(id);
 		}
 
 		internal static void Tick()
 		{
-			ReloadId();
+			MigrateLegacyFile();
+			string saved = WeSave.Data.DiscordGuildId ?? "";
+			if (_guildId != saved)
+				_guildId = saved;
+
 			if (!WeSave.Data.DiscordWidget)
 				return;
 			if (!HasGuildId) {
-				_status = DiscordFeedStatus.Empty;
+				_status = string.IsNullOrEmpty(_guildId) ? DiscordFeedStatus.Empty : DiscordFeedStatus.Typing;
 				return;
 			}
 
@@ -148,42 +168,41 @@ namespace WallpaperEngine.Widgets
 			Tick();
 		}
 
-		private static string ReadIdFromFile()
+		private static void MigrateLegacyFile()
 		{
+			if (_migrated)
+				return;
+			_migrated = true;
 			try {
 				if (!File.Exists(WeSave.DiscordPath))
-					return "";
+					return;
 
+				string fromFile = "";
 				foreach (string raw in File.ReadAllLines(WeSave.DiscordPath)) {
-					string line = raw.Trim();
-					if (line.Length == 0 || line.StartsWith('#'))
-						continue;
-					if (line.StartsWith("id:", StringComparison.OrdinalIgnoreCase))
-						line = line[3..].Trim();
-					if (IsSnowflake(line))
-						return line;
+					string found = ExtractId(raw);
+					if (IsSnowflake(found)) {
+						fromFile = found;
+						break;
+					}
 				}
+
+				if (IsSnowflake(fromFile) && !IsSnowflake(WeSave.Data.DiscordGuildId)) {
+					WeSave.Data.DiscordGuildId = fromFile;
+					WeSave.Save();
+					_guildId = fromFile;
+				}
+
+				File.Delete(WeSave.DiscordPath);
 			}
 			catch {
 			}
-
-			return "";
-		}
-
-		internal static bool IsSnowflake(string id)
-		{
-			if (string.IsNullOrEmpty(id) || id.Length < 17 || id.Length > 20)
-				return false;
-			for (int i = 0; i < id.Length; i++) {
-				if (id[i] < '0' || id[i] > '9')
-					return false;
-			}
-
-			return true;
 		}
 
 		private static void StartFetch(string id)
 		{
+			if (!IsSnowflake(id))
+				return;
+
 			_inFlight = true;
 			_fetchId = id;
 			if (_status != DiscordFeedStatus.Ok)
@@ -240,7 +259,7 @@ namespace WallpaperEngine.Widgets
 		{
 			void Apply()
 			{
-				if (_fetchId != id && _guildId != id)
+				if (_guildId != id)
 					return;
 				_status = status;
 				if (snap != null)
@@ -325,15 +344,13 @@ namespace WallpaperEngine.Widgets
 
 			try {
 				byte[] bytes = await Http.GetByteArrayAsync(url);
-				Texture2D ready = null;
 				var done = new TaskCompletionSource<Texture2D>();
 				Main.QueueMainThreadAction(() => {
+					Texture2D ready = null;
 					try {
 						ready = StampCircle(bytes);
 						if (ready != null) {
 							lock (Avatars) {
-								if (Avatars.Count > 40)
-									DisposeAvatars();
 								Avatars[url] = ready;
 							}
 						}
@@ -353,7 +370,7 @@ namespace WallpaperEngine.Widgets
 
 		private static Texture2D StampCircle(byte[] bytes)
 		{
-			if (bytes == null || bytes.Length < 32)
+			if (bytes == null || bytes.Length < 32 || Main.graphics?.GraphicsDevice == null)
 				return null;
 
 			using var stream = new MemoryStream(bytes);

@@ -86,18 +86,21 @@ UI: {
 	ClockAnalog: Analog
 	ClockDigital: Digital
 	ClockDate: Show date
-	DiscordHint1: Developer Mode → right-click the server → Copy Server ID
-	DiscordHint2: Server Settings → Widget → enable Server Widget
+	DiscordHint1: 1. Developer Mode on → right-click the server → Copy Server ID
+	DiscordHint2: 2. Server Settings → Widget → turn on Server Widget
 	DiscordStyleCompact: Compact card
 	DiscordStyleBanner: Wide banner
 	DiscordStyleRoster: Member list
 	DiscordJoin: Join Voice
-	DiscordOnline: "{0} online"
-	DiscordLoading: Loading…
-	DiscordNeedWidget: Enable Server Widget in Discord
-	DiscordBadId: Check the server ID
-	DiscordNetError: Can't reach Discord
-	DiscordEmpty: Paste a server ID
+	DiscordOnline: %n online
+	DiscordLoading: Looking up the server…
+	DiscordNeedWidget: Turn on Server Widget in Discord (Server Settings → Widget)
+	DiscordBadId: That ID wasn't found
+	DiscordNetError: Can't reach Discord right now
+	DiscordEmpty: Click the field and paste the server ID (Ctrl+V)
+	DiscordNeedDigits: Server IDs are 17–20 digits
+	DiscordIdPlaceholder: Paste server ID here
+	DiscordTapToSet: Click to set the server
 	DiscordChangeId: Change server ID
 	GreetingMorning: Good morning
 	GreetingAfternoon: Good afternoon
@@ -145,7 +148,7 @@ UI: {
 	ToastReset: Reset to vanilla
 	ToastWidgetOn: Widget added
 	ToastWidgetOff: Widget removed
-	ToastDiscordId: Paste the server ID in discord.txt, then click Discord again
+	ToastDiscordId: Paste the server ID in the field — that's it
 	ToastTrackDeleted: Track removed
 	ToastCleanOn: Version clutter hidden
 	ToastCleanOff: Version clutter restored

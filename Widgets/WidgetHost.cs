@@ -16,6 +16,7 @@ namespace WallpaperEngine.Widgets
 			WePlayerUI.Update();
 			QuoteWidget.Refresh();
 			DiscordFeed.Tick();
+			DiscordWidget.TickInput();
 		}
 
 		internal static void HandleInput()

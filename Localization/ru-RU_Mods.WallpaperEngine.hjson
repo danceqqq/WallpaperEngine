@@ -86,18 +86,21 @@ UI: {
 	ClockAnalog: Аналоговые
 	ClockDigital: Цифровые
 	ClockDate: Показывать дату
-	DiscordHint1: Режим разработчика → ПКМ по серверу → Копировать ID сервера
-	DiscordHint2: Настройки сервера → Виджет → включи виджет сервера
+	DiscordHint1: 1. Режим разработчика → ПКМ по серверу → Копировать ID сервера
+	DiscordHint2: 2. Настройки сервера → Виджет → включи виджет сервера
 	DiscordStyleCompact: Компактная карточка
 	DiscordStyleBanner: Широкий баннер
 	DiscordStyleRoster: Список участников
 	DiscordJoin: В голос
-	DiscordOnline: "{0} в сети"
-	DiscordLoading: Загрузка…
-	DiscordNeedWidget: Включи виджет сервера в Discord
-	DiscordBadId: Проверь ID сервера
-	DiscordNetError: Discord недоступен
-	DiscordEmpty: Вставь ID сервера
+	DiscordOnline: %n в сети
+	DiscordLoading: Ищем сервер…
+	DiscordNeedWidget: Включи виджет сервера в Discord (Настройки сервера → Виджет)
+	DiscordBadId: Такой ID не найден
+	DiscordNetError: Сейчас Discord недоступен
+	DiscordEmpty: Нажми поле и вставь ID сервера (Ctrl+V)
+	DiscordNeedDigits: ID сервера — 17–20 цифр
+	DiscordIdPlaceholder: Вставь ID сервера сюда
+	DiscordTapToSet: Нажми, чтобы указать сервер
 	DiscordChangeId: Сменить ID сервера
 	GreetingMorning: Доброе утро
 	GreetingAfternoon: Добрый день
@@ -145,7 +148,7 @@ UI: {
 	ToastReset: Возвращён ванильный вид
 	ToastWidgetOn: Виджет добавлен
 	ToastWidgetOff: Виджет убран
-	ToastDiscordId: Вставь ID сервера в discord.txt и снова нажми Discord
+	ToastDiscordId: Вставь ID сервера в поле — и готово
 	ToastTrackDeleted: Трек удалён
 	ToastCleanOn: Системный текст скрыт
 	ToastCleanOff: Системный текст возвращён

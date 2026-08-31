@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
+using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.UI.Chat;
 using WallpaperEngine.Core;
@@ -25,17 +26,26 @@ namespace WallpaperEngine.Widgets
 		private static bool _hover;
 		private static bool _hoverGear;
 		private static bool _hoverJoin;
+		private static bool _editing;
+		private static bool _enterHeld;
+		private static string _buffer = "";
+		private static int _caret;
 		private static Rectangle _card;
 		private static Rectangle _gear;
 		private static Rectangle _join;
+		private static Rectangle _field;
 
 		internal static bool Enabled => WeSave.Data.DiscordWidget && SceneGraph.Visible(SceneGraph.Discord);
 
-		internal static bool Busy => Enabled && (_hover || _hoverGear || _hoverJoin);
+		internal static bool Editing => _editing;
+
+		internal static bool Busy => Enabled && (_hover || _hoverGear || _hoverJoin || _editing);
 
 		internal static Vector2 Anchor => SceneGraph.Pixel(SceneGraph.Discord);
 
 		internal static float Scale => SceneGraph.ScaleOf(SceneGraph.Discord);
+
+		internal const int IdFieldHeight = 44;
 
 		internal static Rectangle HitRect()
 		{
@@ -49,27 +59,86 @@ namespace WallpaperEngine.Widgets
 			return Rectangle.Union(card, GearHit(card));
 		}
 
-		internal static void OpenIdFile()
+		internal static void OpenIdEditor()
 		{
-			DiscordFeed.EnsureFile();
-			WeFiles.OpenFile(WeSave.DiscordPath);
-			WeToast.Show("ToastDiscordId", 4.2f);
+			if (!_editing)
+				_buffer = DiscordFeed.ExtractId(WeSave.Data.DiscordGuildId ?? "");
+			_editing = true;
+			_caret = 0;
+			_enterHeld = true;
+			Main.clrInput();
+			if (!WePanels.Is(WePanelId.Widgets))
+				WePanels.Open(WePanelId.Widgets);
 		}
 
-		internal static bool TryEnable()
+		internal static void Unfocus()
 		{
-			DiscordFeed.EnsureFile();
-			DiscordFeed.ReloadId();
-			if (DiscordFeed.HasGuildId)
-				return true;
+			if (!_editing)
+				return;
+			_editing = false;
+			PlayerInput.WritingText = false;
+			Main.drawingPlayerChat = false;
+			CommitBuffer();
+		}
 
-			OpenIdFile();
-			return false;
+		internal static void TickInput()
+		{
+			if (!_editing)
+				return;
+
+			if (!WeSave.Data.DiscordWidget || !WePanels.IsOpen || !WePanels.Is(WePanelId.Widgets)) {
+				Unfocus();
+				return;
+			}
+
+			PlayerInput.WritingText = true;
+			Main.drawingPlayerChat = false;
+			try {
+				Main.instance.HandleIME();
+			}
+			catch {
+			}
+
+			string previous = _buffer;
+			string next = _buffer ?? "";
+			try {
+				next = Main.GetInputText(_buffer ?? "") ?? "";
+			}
+			catch {
+			}
+			if (next.Length - previous.Length >= 8)
+				_buffer = DiscordFeed.ExtractId(next);
+			else
+				_buffer = DiscordFeed.DigitsOnly(next, 20);
+
+			if (_buffer != previous && DiscordFeed.IsSnowflake(_buffer))
+				DiscordFeed.SetGuildId(_buffer);
+
+			_caret++;
+			bool enter = Main.inputTextEnter;
+			if (enter && !_enterHeld) {
+				CommitBuffer();
+				_editing = false;
+				PlayerInput.WritingText = false;
+				SoundEngine.PlaySound(SoundID.MenuTick);
+			}
+
+			_enterHeld = enter;
+			if (Main.inputTextEscape)
+				Unfocus();
 		}
 
 		internal static void HandleInput()
 		{
-			if (!Enabled || WePanels.IsOpen || WeSplash.Visible || LayoutEditor.Editing) {
+			if (!Enabled || WeSplash.Visible || LayoutEditor.Editing) {
+				_mouseHeld = Main.mouseLeft;
+				if (WePanels.IsOpen)
+					return;
+				_hover = _hoverGear = _hoverJoin = false;
+				return;
+			}
+
+			if (WePanels.IsOpen) {
 				_mouseHeld = Main.mouseLeft;
 				_hover = _hoverGear = _hoverJoin = false;
 				return;
@@ -86,16 +155,76 @@ namespace WallpaperEngine.Widgets
 			if (!pressed)
 				return;
 
-			if (_hoverGear) {
+			if (_hoverJoin && !string.IsNullOrEmpty(DiscordFeed.Snap.Invite)) {
 				SoundEngine.PlaySound(SoundID.MenuTick);
-				OpenIdFile();
+				try {
+					Utils.OpenToURL(DiscordFeed.Snap.Invite);
+				}
+				catch {
+				}
+
 				return;
 			}
 
-			if (_hoverJoin && !string.IsNullOrEmpty(DiscordFeed.Snap.Invite)) {
+			if (_hover || _hoverGear) {
 				SoundEngine.PlaySound(SoundID.MenuTick);
-				Utils.OpenToURL(DiscordFeed.Snap.Invite);
+				OpenIdEditor();
 			}
+		}
+
+		internal static void DrawIdField(SpriteBatch spriteBatch, Rectangle hit, float fade)
+		{
+			_field = hit;
+			bool hover = hit.Contains(Main.mouseX, Main.mouseY);
+			float pulse = (MathF.Sin(Main.GlobalTimeWrappedHourly * 3.4f) + 1f) * 0.5f;
+			bool live = _editing || hover;
+			Color fill = new Color(18, 20, 26) * ((live ? 0.96f : 0.82f) * fade);
+			Color border = _editing
+				? Color.Lerp(WeAccent.Mid, WeAccent.Light, pulse) * fade
+				: (hover ? WeAccent.Light : WeAccent.Mid) * fade;
+			WeDraw.Fill(spriteBatch, hit, fill);
+			WeDraw.Border(spriteBatch, hit, border);
+
+			string shownId = _editing ? (_buffer ?? "") : (WeSave.Data.DiscordGuildId ?? "");
+			string shown;
+			Color color;
+			if (string.IsNullOrEmpty(shownId) && !_editing) {
+				shown = WeText.UI("DiscordIdPlaceholder");
+				color = Muted * fade;
+			}
+			else {
+				shown = shownId;
+				if (_editing && (_caret / 20) % 2 == 0)
+					shown += "|";
+				color = Color.White * fade;
+			}
+
+			var font = FontAssets.MouseText.Value;
+			ChatManager.DrawColorCodedStringWithShadow(
+				spriteBatch, font, Plain(shown),
+				new Vector2(hit.X + 12, hit.Y + 12), color, 0f, Vector2.Zero, new Vector2(0.82f));
+
+			if (DiscordFeed.IsSnowflake(shownId)) {
+				Texture2D circle = WeDraw.Circle();
+				Vector2 pip = new(hit.Right - 18, hit.Y + hit.Height * 0.5f);
+				spriteBatch.Draw(circle, pip, null, Online * fade, 0f, circle.Size() * 0.5f, 10f / circle.Width, SpriteEffects.None, 0f);
+			}
+		}
+
+		internal static string StatusLine()
+		{
+			if (_editing && !DiscordFeed.IsSnowflake(_buffer) && _buffer.Length > 0)
+				return _buffer.Length < 17 ? WeText.UI("DiscordNeedDigits") : WeText.UI("DiscordBadId");
+
+			return DiscordFeed.Status switch {
+				DiscordFeedStatus.Loading => WeText.UI("DiscordLoading"),
+				DiscordFeedStatus.NeedWidget => WeText.UI("DiscordNeedWidget"),
+				DiscordFeedStatus.BadId => WeText.UI("DiscordBadId"),
+				DiscordFeedStatus.NetError => WeText.UI("DiscordNetError"),
+				DiscordFeedStatus.Typing => WeText.UI("DiscordNeedDigits"),
+				DiscordFeedStatus.Ok => OnlineLabel(DiscordFeed.Snap.Presence),
+				_ => WeText.UI("DiscordEmpty")
+			};
 		}
 
 		internal static void Draw(SpriteBatch spriteBatch, float fade)
@@ -132,6 +261,13 @@ namespace WallpaperEngine.Widgets
 			});
 		}
 
+		private static void CommitBuffer()
+		{
+			string id = DiscordFeed.ExtractId(_buffer);
+			_buffer = id;
+			DiscordFeed.SetGuildId(id);
+		}
+
 		private static Vector2 CardSize()
 		{
 			float s = Scale;
@@ -164,7 +300,7 @@ namespace WallpaperEngine.Widgets
 				circle.Size() * 0.5f, (radius * 2.6f) / circle.Width, SpriteEffects.None, 0f);
 			RoundButton.DrawIcon(
 				spriteBatch, center, radius,
-				WeIcons.Get(WeIcons.Setting), 0f, fade, _hoverGear);
+				WeIcons.Get(WeIcons.Setting), 0f, fade, _hoverGear || _editing);
 		}
 
 		private static void DrawCompact(SpriteBatch spriteBatch, float fade)
@@ -173,9 +309,8 @@ namespace WallpaperEngine.Widgets
 			Vector2 badge = new(_card.X + 22f * s, _card.Y + 28f * s);
 			DrawBadge(spriteBatch, badge, 18f * s, fade);
 			DrawOnlineLine(spriteBatch, new Vector2(_card.X + 18f * s, _card.Y + 78f * s), fade, 5);
-			string status = StatusText();
 			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, FontAssets.MouseText.Value, status,
+				spriteBatch, FontAssets.MouseText.Value, Plain(StatusText()),
 				new Vector2(_card.X + 18f * s, _card.Bottom - 28f * s),
 				Muted * fade, 0f, Vector2.Zero, new Vector2(0.72f * s));
 		}
@@ -187,14 +322,14 @@ namespace WallpaperEngine.Widgets
 			string name = DisplayName();
 			var font = FontAssets.MouseText.Value;
 			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, font, Ellipsize(font, name, 168f * s, 0.9f * s),
+				spriteBatch, font, Plain(Ellipsize(font, name, 168f * s, 0.9f * s)),
 				new Vector2(_card.X + 54f * s, _card.Y + 16f * s),
 				Color.White * fade, 0f, Vector2.Zero, new Vector2(0.9f * s));
 			string channel = string.IsNullOrEmpty(DiscordFeed.Snap.Voice)
-				? WeText.UI("DiscordOnline").Replace("{0}", DiscordFeed.Snap.Presence.ToString())
+				? OnlineLabel(DiscordFeed.Snap.Presence)
 				: "# " + DiscordFeed.Snap.Voice;
 			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, font, Ellipsize(font, channel, 176f * s, 0.72f * s),
+				spriteBatch, font, Plain(Ellipsize(font, channel, 176f * s, 0.72f * s)),
 				new Vector2(_card.X + 54f * s, _card.Y + 38f * s),
 				Muted * fade, 0f, Vector2.Zero, new Vector2(0.72f * s));
 
@@ -207,7 +342,7 @@ namespace WallpaperEngine.Widgets
 				Color fill = _hoverJoin ? WeAccent.Light : WeAccent.Mid;
 				FillRound(spriteBatch, _join, fill * fade, h * 0.5f);
 				ChatManager.DrawColorCodedStringWithShadow(
-					spriteBatch, font, label,
+					spriteBatch, font, Plain(label),
 					new Vector2(_join.X + (_join.Width - text.X) * 0.5f, _join.Y + (_join.Height - text.Y) * 0.5f - 1f),
 					Color.White * fade, 0f, Vector2.Zero, new Vector2(0.78f * s));
 			}
@@ -221,19 +356,19 @@ namespace WallpaperEngine.Widgets
 			DrawBadge(spriteBatch, new Vector2(_card.X + 26f * s, _card.Y + 28f * s), 16f * s, fade);
 			var font = FontAssets.MouseText.Value;
 			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, font, Ellipsize(font, DisplayName(), 140f * s, 0.82f * s),
+				spriteBatch, font, Plain(Ellipsize(font, DisplayName(), 140f * s, 0.82f * s)),
 				new Vector2(_card.X + 50f * s, _card.Y + 14f * s),
 				Color.White * fade, 0f, Vector2.Zero, new Vector2(0.82f * s));
 			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, font, WeText.UI("DiscordOnline").Replace("{0}", DiscordFeed.Snap.Presence.ToString()),
+				spriteBatch, font, Plain(OnlineLabel(DiscordFeed.Snap.Presence)),
 				new Vector2(_card.X + 50f * s, _card.Y + 34f * s),
 				Muted * fade, 0f, Vector2.Zero, new Vector2(0.7f * s));
 
-			DiscordMember[] members = DiscordFeed.Snap.Members;
+			DiscordMember[] members = DiscordFeed.Snap.Members ?? Array.Empty<DiscordMember>();
 			int rows = Math.Min(members.Length, 6);
 			if (rows == 0) {
 				ChatManager.DrawColorCodedStringWithShadow(
-					spriteBatch, font, StatusText(),
+					spriteBatch, font, Plain(StatusText()),
 					new Vector2(_card.X + 18f * s, _card.Y + 70f * s),
 					Muted * fade, 0f, Vector2.Zero, new Vector2(0.72f * s));
 				return;
@@ -256,47 +391,45 @@ namespace WallpaperEngine.Widgets
 				circle, center, null, WeAccent.Mid * (0.85f * fade), 0f,
 				circle.Size() * 0.5f, (radius * 2f - 3f) / circle.Width, SpriteEffects.None, 0f);
 			string letter = DisplayName();
-			letter = letter.Length > 0 ? letter[..1].ToUpperInvariant() : "D";
+			letter = letter.Length > 0 ? char.ToUpperInvariant(letter[0]).ToString() : "D";
 			var font = FontAssets.DeathText.Value;
 			float scale = radius / 22f;
 			Vector2 size = font.MeasureString(letter) * scale;
 			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, font, letter, center - size * 0.5f + new Vector2(0f, 1f * scale),
+				spriteBatch, font, Plain(letter), center - size * 0.5f + new Vector2(0f, 1f * scale),
 				Color.White * fade, 0f, Vector2.Zero, new Vector2(scale));
 		}
 
 		private static void DrawOnlineLine(SpriteBatch spriteBatch, Vector2 origin, float fade, int max)
 		{
-			DiscordMember[] members = DiscordFeed.Snap.Members;
+			DiscordMember[] members = DiscordFeed.Snap.Members ?? Array.Empty<DiscordMember>();
 			int shown = Math.Min(members.Length, max);
 			float s = Scale;
-			float x = origin.X;
-			for (int i = shown - 1; i >= 0; i--) {
-				DrawAvatar(spriteBatch, members[i], new Vector2(x + i * 18f * s, origin.Y), 13f * s, fade);
-			}
+			for (int i = shown - 1; i >= 0; i--)
+				DrawAvatar(spriteBatch, members[i], new Vector2(origin.X + i * 18f * s, origin.Y), 13f * s, fade);
 
-			string label = WeText.UI("DiscordOnline").Replace("{0}", DiscordFeed.Snap.Presence.ToString());
-			float textX = origin.X + Math.Max(shown, 1) * 18f * s + 10f * s;
-			if (shown == 0)
-				textX = origin.X;
+			float textX = shown == 0 ? origin.X : origin.X + shown * 18f * s + 10f * s;
 			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, FontAssets.MouseText.Value, label,
+				spriteBatch, FontAssets.MouseText.Value, Plain(OnlineLabel(DiscordFeed.Snap.Presence)),
 				new Vector2(textX, origin.Y - 8f * s),
 				Color.White * fade, 0f, Vector2.Zero, new Vector2(0.76f * s));
 		}
 
 		private static void DrawPerson(SpriteBatch spriteBatch, DiscordMember member, Vector2 pos, float maxWidth, float fade)
 		{
+			if (member == null)
+				return;
+
 			float s = Scale;
 			DrawAvatar(spriteBatch, member, pos + new Vector2(12f * s, 10f * s), 12f * s, fade);
 			string name = Ellipsize(FontAssets.MouseText.Value, member.Name, maxWidth - 36f * s, 0.74f * s);
 			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, FontAssets.MouseText.Value, name,
+				spriteBatch, FontAssets.MouseText.Value, Plain(name),
 				pos + new Vector2(30f * s, 2f * s),
 				Color.White * fade, 0f, Vector2.Zero, new Vector2(0.74f * s));
 			if (!string.IsNullOrEmpty(member.Voice)) {
 				ChatManager.DrawColorCodedStringWithShadow(
-					spriteBatch, FontAssets.MouseText.Value, "# " + member.Voice,
+					spriteBatch, FontAssets.MouseText.Value, Plain("# " + member.Voice),
 					pos + new Vector2(30f * s, 16f * s),
 					Muted * fade, 0f, Vector2.Zero, new Vector2(0.62f * s));
 			}
@@ -308,21 +441,21 @@ namespace WallpaperEngine.Widgets
 			spriteBatch.Draw(
 				circle, center, null, new Color(22, 24, 28) * fade, 0f,
 				circle.Size() * 0.5f, (radius * 2f + 3f) / circle.Width, SpriteEffects.None, 0f);
-			if (member.Avatar != null && !member.Avatar.IsDisposed) {
+			if (member?.Avatar != null && !member.Avatar.IsDisposed) {
 				spriteBatch.Draw(
 					member.Avatar, center, null, Color.White * fade, 0f,
-					member.Avatar.Size() * 0.5f, radius * 2f / member.Avatar.Width, SpriteEffects.None, 0f);
+					member.Avatar.Size() * 0.5f, radius * 2f / Math.Max(1, member.Avatar.Width), SpriteEffects.None, 0f);
 			}
 			else {
-				string letter = member.Name.Length > 0 ? member.Name[..1].ToUpperInvariant() : "?";
+				string letter = !string.IsNullOrEmpty(member?.Name) ? char.ToUpperInvariant(member.Name[0]).ToString() : "?";
 				float scale = radius / 14f;
 				Vector2 size = FontAssets.MouseText.Value.MeasureString(letter) * scale;
 				ChatManager.DrawColorCodedStringWithShadow(
-					spriteBatch, FontAssets.MouseText.Value, letter,
+					spriteBatch, FontAssets.MouseText.Value, Plain(letter),
 					center - size * 0.5f, Color.White * fade, 0f, Vector2.Zero, new Vector2(scale));
 			}
 
-			Color pip = member.Status switch {
+			Color pip = member?.Status switch {
 				"idle" => Idle,
 				"dnd" => Dnd,
 				"offline" => Offline,
@@ -346,14 +479,19 @@ namespace WallpaperEngine.Widgets
 
 		private static string StatusText()
 		{
-			return DiscordFeed.Status switch {
-				DiscordFeedStatus.Loading => WeText.UI("DiscordLoading"),
-				DiscordFeedStatus.NeedWidget => WeText.UI("DiscordNeedWidget"),
-				DiscordFeedStatus.BadId => WeText.UI("DiscordBadId"),
-				DiscordFeedStatus.NetError => WeText.UI("DiscordNetError"),
-				DiscordFeedStatus.Empty => WeText.UI("DiscordEmpty"),
-				_ => WeText.UI("DiscordOnline").Replace("{0}", DiscordFeed.Snap.Presence.ToString())
-			};
+			if (!DiscordFeed.HasGuildId)
+				return WeText.UI("DiscordTapToSet");
+			return StatusLine();
+		}
+
+		private static string OnlineLabel(int count) =>
+			WeText.UI("DiscordOnline").Replace("%n", count.ToString());
+
+		private static string Plain(string text)
+		{
+			if (string.IsNullOrEmpty(text))
+				return "";
+			return text.Replace("[", "(").Replace("]", ")");
 		}
 
 		private static string Ellipsize(ReLogic.Graphics.DynamicSpriteFont font, string text, float max, float scale)
@@ -362,9 +500,9 @@ namespace WallpaperEngine.Widgets
 				return text ?? "";
 
 			string cut = text;
-			while (cut.Length > 1 && font.MeasureString(cut + "…").X * scale > max)
+			while (cut.Length > 1 && font.MeasureString(cut + "...").X * scale > max)
 				cut = cut[..^1];
-			return cut + "…";
+			return cut + "...";
 		}
 
 		private static void FillRound(SpriteBatch spriteBatch, Rectangle rect, Color color, float radius)
