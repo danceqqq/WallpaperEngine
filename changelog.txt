@@ -1,32 +1,35 @@
+v0.7
+- Discord wide banner lists voice channels (with Join) and scrolls when they do not fit. Member list puts a Join pill on anyone in voice
+- Discord cards use an accent edge, header rule, and channel grouping instead of a flat grey box
+- Widgets panel: live-preview tiles. Hover an active tile to slide its settings open; the list below moves and scroll follows
+- Open customize panels no longer click through into the hub, widgets, or menu buttons underneath (picking a wallpaper will not also open Music)
+
 v0.6
-- Borrowed Catalyst logos use Terraria's own logo bounce (rotation + scale) instead of sitting still
-- Wrath of the Gods "The Insouciant" wallpaper draws the live carmine rift sky (not vanilla night). Scoped menu swap is restored every frame
-- Discord server widget: paste the server ID in-game (no discord.txt). Compact / banner / member-list styles. Live panel previews (dim when off). No gear on the live card — ID and styles live in the widgets panel. Refreshes about every 15s (8s if Discord still hasn't published the widget). Server icon comes from the widget invite. Voice members sort first; the roster scrolls. Join Voice opens the Discord app when it's installed
-- Public widget JSON only — enable Server Widget in Discord
+- Borrowed Catalyst logos use Terraria's own logo bounce (rotation + scale)
+- Wrath of the Gods "The Insouciant" wallpaper draws the live carmine rift sky. Scoped menu swap is restored every frame
+- Discord server widget: paste the server ID in the widgets panel (no discord.txt). Compact / banner / member-list. Live previews. Refresh about every 15s. Server icon from the widget invite. Voice members sort first. Join Voice opens the Discord app when it is installed
 
 v0.5
 - Client settings can switch the customize hub between the circle and a sliding iOS-style bar (live previews in the panel)
-- Menu buttons: visuals and hitboxes stay together after moving them (DrawBorderStringBig path + remap only when the text actually shifted). Thanks Glorp for the report
+- Menu buttons: visuals and hitboxes stay together after moving them. Thanks Glorp for the report
 
 v0.4
-- Custom tracks have a delete button (the bin). Click a row to play that song
+- Custom tracks have a delete button. Click a row to play that song
 - Change logo uses the Terraria tree icon, sized for the wrench circle
-- This mod's row in the Mods menu uses the workshop gif as its background, with a #0099ff outline
-- New moon-phase widget (vanilla moon frames, layout-editable)
+- This mod's row in the Mods menu uses the workshop gif as its background
+- Moon-phase widget (vanilla moon frames, layout-editable)
 - Borrowed skies are labeled live vs still. Collapsed player shows the current track on hover
 
 v0.3
-- Borrowed skies run the other menu's own draw (animations, shaders, clouds). Stills are only list previews, never a live substitute
-- Wrath of the Gods: Ascent uses Terminus stairway sky; Carmine Yonder uses the rift sky target (not a stretched thumbnail or flat gradient)
-- Catalyst: Astrageldon wallpaper is the live menu background; the CATALYST wordmark is the logo slot (menu-theme logo, not a boss icon). Point-sampled so it does not grow a halo
+- Borrowed skies run the other menu's own draw (animations, shaders, clouds). Stills are only list previews
+- Wrath of the Gods: Ascent uses Terminus stairway sky; Carmine Yonder uses the rift sky target
+- Catalyst: Astrageldon wallpaper is the live menu background; the CATALYST wordmark is the logo slot. Point-sampled so it does not grow a halo
 - Logo and sky stay independent: wallpaper pass skips that theme's logo, logo pass skips the sky
 
 v0.2
-- Safer previews for borrowed skies (still images from the other mod, never a live render-target capture)
-- Wrath of the Gods: Ascent listed with a map still; Carmine Yonder draws via their sky target instead of stretching a tiny shader thumbnail
-- Catalyst: Astrageldon wallpaper and CATALYST wordmark are separate; wallpaper no longer stamps the logo
-- Paradise's Shining Backdrop removed from borrow lists (its sky only exists while that WotG theme is selected)
-- Music player uses the Play/Pause/Prev/Next/Playlist/Upload/Shuffle/Loop icons
+- Safer previews for borrowed skies (still images, never a live render-target capture)
+- Paradise's Shining Backdrop removed from borrow lists
+- Music player uses Play/Pause/Prev/Next/Playlist/Upload/Shuffle/Loop icons
 - Removed the Both shortcut so logo and sky stay independent
 
 v0.1

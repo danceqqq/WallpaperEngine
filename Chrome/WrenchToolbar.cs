@@ -92,6 +92,13 @@ namespace WallpaperEngine.Chrome
 			if (!WeModMenu.OnTitle)
 				return;
 
+			if (WePanels.IsOpen) {
+				Main.blockMouse = true;
+				if (WrenchHub.UseDock)
+					WrenchDock.HandleInput();
+				return;
+			}
+
 			if (WrenchHub.UseDock) {
 				WrenchDock.HandleInput();
 				return;

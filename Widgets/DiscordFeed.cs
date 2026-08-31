@@ -44,6 +44,13 @@ namespace WallpaperEngine.Widgets
 		internal int Presence;
 		internal Texture2D Icon;
 		internal DiscordMember[] Members = Array.Empty<DiscordMember>();
+		internal DiscordChan[] Channels = Array.Empty<DiscordChan>();
+	}
+
+	internal sealed class DiscordChan
+	{
+		internal string Id = "";
+		internal string Name = "";
 	}
 
 	internal static class DiscordFeed
@@ -65,7 +72,7 @@ namespace WallpaperEngine.Widgets
 		static DiscordFeed()
 		{
 			Http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-			Http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WallpaperEngine-tModLoader/0.6");
+			Http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WallpaperEngine-tModLoader/0.7");
 			Http.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
 		}
 
@@ -175,10 +182,12 @@ namespace WallpaperEngine.Widgets
 			Tick();
 		}
 
-		internal static void OpenJoin()
+		internal static void OpenJoin(string channelId = null)
 		{
 			string guild = _guildId;
-			string voice = _snap?.VoiceChannelId ?? "";
+			string voice = channelId;
+			if (string.IsNullOrEmpty(voice))
+				voice = _snap?.VoiceChannelId ?? "";
 			string code = _snap?.InviteCode ?? "";
 			if (!string.IsNullOrEmpty(guild) && !string.IsNullOrEmpty(voice) && TryProtocol("discord://-/channels/" + guild + "/" + voice))
 				return;
@@ -380,6 +389,18 @@ namespace WallpaperEngine.Widgets
 
 				members.Sort(CompareMembers);
 				snap.Members = members.ToArray();
+				var chanList = new List<DiscordChan>();
+				foreach (KeyValuePair<string, string> pair in channels)
+					chanList.Add(new DiscordChan { Id = pair.Key, Name = pair.Value });
+				for (int i = 0; i < members.Count; i++) {
+					string cid = members[i].ChannelId;
+					if (string.IsNullOrEmpty(cid) || channels.ContainsKey(cid))
+						continue;
+					chanList.Add(new DiscordChan { Id = cid, Name = members[i].Voice });
+					channels[cid] = members[i].Voice;
+				}
+
+				snap.Channels = chanList.ToArray();
 				if (string.IsNullOrEmpty(snap.Name))
 					snap.Name = "Discord";
 				return true;

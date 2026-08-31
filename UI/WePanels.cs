@@ -37,13 +37,23 @@ namespace WallpaperEngine.UI
 		private static bool _mouseHeld;
 		private static int _lastWheel;
 		private static string _dragSlider;
-		private const int WidgetTileH = 76;
-		private const int WidgetTileStep = 84;
-		private const int DiscordStyleH = 88;
-		private const int DiscordStyleStep = 96;
+		private static bool _ateInput;
+		private const int SlotCount = 5;
+		private const int SlotPlayer = 0;
+		private const int SlotClock = 1;
+		private const int SlotQuote = 2;
+		private const int SlotMoon = 3;
+		private const int SlotDiscord = 4;
+		private static readonly float[] TileOpen = new float[SlotCount];
+		private static int _tileHover = -1;
+		private const int WidgetTileH = 72;
+		private const int WidgetTileGap = 8;
+		private const int DiscordStyleH = 80;
+		private const int DiscordStyleStep = 86;
 
 		internal static bool IsOpen => _id != WePanelId.None;
 		internal static bool Is(WePanelId id) => _id == id;
+		internal static bool AteInput => _ateInput;
 
 		internal static void Open(WePanelId id)
 		{
@@ -76,6 +86,7 @@ namespace WallpaperEngine.UI
 			_fade = MathHelper.Lerp(_fade, IsOpen ? 1f : 0f, 0.22f);
 			if (!IsOpen && _fade < 0.02f)
 				_fade = 0f;
+			TickWidgetTiles();
 		}
 
 		internal static void HandleInput()
@@ -89,6 +100,7 @@ namespace WallpaperEngine.UI
 			if (!IsOpen)
 				return;
 
+			_ateInput = true;
 			Main.blockMouse = true;
 			Rectangle panel = PanelRect();
 
@@ -118,7 +130,11 @@ namespace WallpaperEngine.UI
 			Main.mouseLeftRelease = false;
 		}
 
-		internal static void EndFrame() => _frameInput = false;
+		internal static void EndFrame()
+		{
+			_frameInput = false;
+			_ateInput = false;
+		}
 
 		internal static void Draw(SpriteBatch spriteBatch)
 		{
@@ -387,31 +403,12 @@ namespace WallpaperEngine.UI
 
 		private static void DrawWidgets(SpriteBatch spriteBatch, Rectangle panel, ref int y)
 		{
-			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddPlayer"), WeSave.Data.PlayerWidget, WePlayerUI.DrawPreview);
-			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddClock"), WeSave.Data.ClockWidget, ClockWidget.DrawPreview);
-			if (WeSave.Data.ClockWidget) {
-				DrawCard(spriteBatch, panel, ref y, WeText.UI(WeSave.Data.Clock24h ? "Clock24h" : "Clock12h"), WeSave.Data.Clock24h);
-				DrawCard(spriteBatch, panel, ref y, WeText.UI(WeSave.Data.ClockAnalog ? "ClockAnalog" : "ClockDigital"), WeSave.Data.ClockAnalog);
-				DrawCard(spriteBatch, panel, ref y, WeText.UI("ClockDate"), WeSave.Data.ClockDate);
-			}
-
-			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddQuote"), WeSave.Data.QuoteWidget, QuoteWidget.DrawPreview);
-			if (WeSave.Data.QuoteWidget)
-				DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("OpenQuotes"), WeText.UI("OpenFolder"));
-
-			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddMoon"), WeSave.Data.MoonWidget, MoonWidget.DrawPreview);
-
-			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddDiscord"), WeSave.Data.DiscordWidget,
+			DrawWidgetBand(spriteBatch, panel, ref y, SlotPlayer, WeText.UI("AddPlayer"), WeSave.Data.PlayerWidget, WePlayerUI.DrawPreview);
+			DrawWidgetBand(spriteBatch, panel, ref y, SlotClock, WeText.UI("AddClock"), WeSave.Data.ClockWidget, ClockWidget.DrawPreview);
+			DrawWidgetBand(spriteBatch, panel, ref y, SlotQuote, WeText.UI("AddQuote"), WeSave.Data.QuoteWidget, QuoteWidget.DrawPreview);
+			DrawWidgetBand(spriteBatch, panel, ref y, SlotMoon, WeText.UI("AddMoon"), WeSave.Data.MoonWidget, MoonWidget.DrawPreview);
+			DrawWidgetBand(spriteBatch, panel, ref y, SlotDiscord, WeText.UI("AddDiscord"), WeSave.Data.DiscordWidget,
 				(sb, box, fade) => DiscordWidget.DrawPreview(sb, box, fade, WeSave.Data.DiscordStyle));
-			if (WeSave.Data.DiscordWidget) {
-				DrawDiscordIdField(spriteBatch, panel, ref y);
-				DrawHint(spriteBatch, panel, ref y, DiscordWidget.StatusLine());
-				DrawHint(spriteBatch, panel, ref y, WeText.UI("DiscordHint1"));
-				DrawHint(spriteBatch, panel, ref y, WeText.UI("DiscordHint2"));
-				DrawDiscordStyle(spriteBatch, panel, ref y, 0);
-				DrawDiscordStyle(spriteBatch, panel, ref y, 1);
-				DrawDiscordStyle(spriteBatch, panel, ref y, 2);
-			}
 
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("BtnClean"), WeSave.Data.CleanChrome);
 			DrawHint(spriteBatch, panel, ref y, WeText.UI("HiddenLayers"));
@@ -421,83 +418,44 @@ namespace WallpaperEngine.UI
 
 		private static void ClickWidgets(Rectangle panel, ref int y)
 		{
-			if (ClickWidgetTile(panel, ref y)) {
+			if (ClickWidgetBand(panel, ref y, SlotPlayer)) {
 				WeSettings.SetPlayerWidget(!WeSave.Data.PlayerWidget);
 				WeToast.Show(WeSave.Data.PlayerWidget ? "ToastWidgetOn" : "ToastWidgetOff");
 			}
 
-			if (ClickWidgetTile(panel, ref y)) {
+			if (ClickWidgetBand(panel, ref y, SlotClock)) {
 				WeSettings.SetClockWidget(!WeSave.Data.ClockWidget);
 				WeToast.Show(WeSave.Data.ClockWidget ? "ToastWidgetOn" : "ToastWidgetOff");
 			}
 
-			if (WeSave.Data.ClockWidget) {
-				if (ClickCard(panel, ref y)) {
-					WeSave.Data.Clock24h = !WeSave.Data.Clock24h;
-					WeSave.Save();
-				}
-
-				if (ClickCard(panel, ref y)) {
-					WeSave.Data.ClockAnalog = !WeSave.Data.ClockAnalog;
-					WeSave.Save();
-				}
-
-				if (ClickCard(panel, ref y)) {
-					WeSave.Data.ClockDate = !WeSave.Data.ClockDate;
-					WeSave.Save();
-				}
-			}
-
-			if (ClickWidgetTile(panel, ref y)) {
+			if (ClickWidgetBand(panel, ref y, SlotQuote)) {
 				WeSettings.SetQuoteWidget(!WeSave.Data.QuoteWidget);
 				if (WeSave.Data.QuoteWidget)
 					QuoteWidget.EnsureFile();
 				WeToast.Show(WeSave.Data.QuoteWidget ? "ToastWidgetOn" : "ToastWidgetOff");
 			}
 
-			if (WeSave.Data.QuoteWidget && ClickRow(panel, ref y, out int quoteWhich)) {
-				if (quoteWhich == 0) {
-					QuoteWidget.EnsureFile();
-					WeFiles.OpenFile(WeSave.QuotePath);
-				}
-				else
-					WeFiles.OpenFolder(WeSave.RootFolder);
-			}
-
-			if (ClickWidgetTile(panel, ref y)) {
+			if (ClickWidgetBand(panel, ref y, SlotMoon)) {
 				WeSettings.SetMoonWidget(!WeSave.Data.MoonWidget);
 				WeToast.Show(WeSave.Data.MoonWidget ? "ToastWidgetOn" : "ToastWidgetOff");
 			}
 
 			bool discordWasOn = WeSave.Data.DiscordWidget;
-			if (ClickWidgetTile(panel, ref y)) {
+			if (ClickWidgetBand(panel, ref y, SlotDiscord, discordWasOn)) {
 				if (discordWasOn) {
 					WeSettings.SetDiscordWidget(false);
 					DiscordWidget.Unfocus();
+					TileOpen[SlotDiscord] = 0f;
 					WeToast.Show("ToastWidgetOff");
 				}
 				else {
 					WeSettings.SetDiscordWidget(true);
 					DiscordWidget.OpenIdEditor();
 					DiscordFeed.RefreshNow();
+					TileOpen[SlotDiscord] = 1f;
+					_tileHover = SlotDiscord;
 					WeToast.Show("ToastDiscordId", 3.6f);
 				}
-			}
-
-			if (WeSave.Data.DiscordWidget) {
-				if (ClickDiscordIdField(panel, ref y))
-					DiscordWidget.OpenIdEditor();
-				else if (discordWasOn && DiscordWidget.Editing)
-					DiscordWidget.Unfocus();
-				SkipHint(ref y);
-				SkipHint(ref y);
-				SkipHint(ref y);
-				if (ClickDiscordStyle(panel, ref y))
-					WeSettings.SetDiscordStyle(0);
-				if (ClickDiscordStyle(panel, ref y))
-					WeSettings.SetDiscordStyle(1);
-				if (ClickDiscordStyle(panel, ref y))
-					WeSettings.SetDiscordStyle(2);
 			}
 
 			if (ClickCard(panel, ref y)) {
@@ -593,31 +551,228 @@ namespace WallpaperEngine.UI
 			return hit.Contains(Main.mouseX, Main.mouseY);
 		}
 
-		private static void DrawWidgetTile(SpriteBatch spriteBatch, Rectangle panel, ref int y, string title, bool on, Action<SpriteBatch, Rectangle, float> preview)
+		private static void DrawWidgetBand(SpriteBatch spriteBatch, Rectangle panel, ref int y, int slot, string title, bool on, Action<SpriteBatch, Rectangle, float> preview)
+		{
+			DrawWidgetTile(spriteBatch, panel, ref y, title, on, preview, slot);
+			int extra = SettingsExtra(slot);
+			if (on && extra > 0) {
+				var well = Row(panel, y, extra);
+				WeDraw.Fill(spriteBatch, well, new Color(14, 16, 20) * (0.94f * _fade));
+				WeDraw.Border(spriteBatch, well, WeAccent.Mid * (0.45f * _fade));
+				WeDraw.WithClip(spriteBatch, well, () => {
+					int inner = well.Y;
+					DrawSlotSettings(spriteBatch, panel, ref inner, slot);
+				});
+				y += extra;
+			}
+
+			y += WidgetTileGap;
+		}
+
+		private static bool ClickWidgetBand(Rectangle panel, ref int y, int slot, bool discordWasOn = false)
+		{
+			bool tile = ClickWidgetTile(panel, ref y);
+			int extra = SettingsExtra(slot);
+			if (TileOn(slot) && SettingsNatural(slot) > 0) {
+				int start = y;
+				if (!tile && TileOpen[slot] > 0.82f) {
+					int inner = start;
+					ClickSlotSettings(panel, ref inner, slot, discordWasOn);
+				}
+
+				y = start + extra;
+			}
+
+			y += WidgetTileGap;
+			return tile;
+		}
+
+		private static void DrawWidgetTile(SpriteBatch spriteBatch, Rectangle panel, ref int y, string title, bool on, Action<SpriteBatch, Rectangle, float> preview, int slot)
 		{
 			Rectangle hit = Row(panel, y, WidgetTileH);
-			bool hover = hit.Contains(Main.mouseX, Main.mouseY);
+			bool hover = hit.Contains(Main.mouseX, Main.mouseY) || _tileHover == slot;
 			Color fill = on ? WeAccent.Deep : new Color(22, 24, 30);
 			Color border = on || hover ? WeAccent.Light : new Color(72, 76, 84);
 			WeDraw.Fill(spriteBatch, hit, fill * ((hover ? 0.96f : on ? 0.88f : 0.78f) * _fade));
 			WeDraw.Border(spriteBatch, hit, border * _fade);
-			var previewBox = new Rectangle(hit.X + 8, hit.Y + 8, 156, hit.Height - 16);
+			if (on)
+				WeDraw.Fill(spriteBatch, new Rectangle(hit.X, hit.Y + 8, 3, hit.Height - 16), WeAccent.Mid * _fade);
+			var previewBox = new Rectangle(hit.X + 10, hit.Y + 8, 148, hit.Height - 16);
 			WeDraw.Fill(spriteBatch, previewBox, new Color(14, 16, 20) * _fade);
-			float dim = on ? 1f : 0.42f;
-			preview?.Invoke(spriteBatch, previewBox, _fade * dim);
+			preview?.Invoke(spriteBatch, previewBox, _fade * (on ? 1f : 0.42f));
 			ChatManager.DrawColorCodedStringWithShadow(
 				spriteBatch, FontAssets.MouseText.Value, title,
-				new Vector2(previewBox.Right + 14, hit.Y + hit.Height * 0.5f - 10f),
+				new Vector2(previewBox.Right + 14, hit.Y + 16),
 				(on ? Color.White : new Color(168, 172, 180)) * _fade, 0f, Vector2.Zero, new Vector2(0.84f));
-			y += WidgetTileStep;
+			if (on && SettingsNatural(slot) > 0) {
+				string hint = WeText.UI("WidgetHoverSettings");
+				ChatManager.DrawColorCodedStringWithShadow(
+					spriteBatch, FontAssets.MouseText.Value, hint,
+					new Vector2(previewBox.Right + 14, hit.Y + 40),
+					MutedHint() * _fade, 0f, Vector2.Zero, new Vector2(0.68f));
+			}
+
+			y += WidgetTileH;
 		}
 
 		private static bool ClickWidgetTile(Rectangle panel, ref int y)
 		{
 			Rectangle hit = Row(panel, y, WidgetTileH);
-			y += WidgetTileStep;
+			y += WidgetTileH;
 			return hit.Contains(Main.mouseX, Main.mouseY);
 		}
+
+		private static Color MutedHint() => new Color(168, 172, 180);
+
+		private static void DrawSlotSettings(SpriteBatch spriteBatch, Rectangle panel, ref int y, int slot)
+		{
+			switch (slot) {
+				case SlotClock:
+					DrawCard(spriteBatch, panel, ref y, WeText.UI(WeSave.Data.Clock24h ? "Clock24h" : "Clock12h"), WeSave.Data.Clock24h);
+					DrawCard(spriteBatch, panel, ref y, WeText.UI(WeSave.Data.ClockAnalog ? "ClockAnalog" : "ClockDigital"), WeSave.Data.ClockAnalog);
+					DrawCard(spriteBatch, panel, ref y, WeText.UI("ClockDate"), WeSave.Data.ClockDate);
+					break;
+				case SlotQuote:
+					DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("OpenQuotes"), WeText.UI("OpenFolder"));
+					break;
+				case SlotDiscord:
+					DrawDiscordIdField(spriteBatch, panel, ref y);
+					DrawHint(spriteBatch, panel, ref y, DiscordWidget.StatusLine());
+					DrawHint(spriteBatch, panel, ref y, WeText.UI("DiscordHint1"));
+					DrawHint(spriteBatch, panel, ref y, WeText.UI("DiscordHint2"));
+					DrawDiscordStyle(spriteBatch, panel, ref y, 0);
+					DrawDiscordStyle(spriteBatch, panel, ref y, 1);
+					DrawDiscordStyle(spriteBatch, panel, ref y, 2);
+					break;
+			}
+		}
+
+		private static void ClickSlotSettings(Rectangle panel, ref int y, int slot, bool discordWasOn)
+		{
+			switch (slot) {
+				case SlotClock:
+					if (ClickCard(panel, ref y)) {
+						WeSave.Data.Clock24h = !WeSave.Data.Clock24h;
+						WeSave.Save();
+					}
+
+					if (ClickCard(panel, ref y)) {
+						WeSave.Data.ClockAnalog = !WeSave.Data.ClockAnalog;
+						WeSave.Save();
+					}
+
+					if (ClickCard(panel, ref y)) {
+						WeSave.Data.ClockDate = !WeSave.Data.ClockDate;
+						WeSave.Save();
+					}
+
+					break;
+				case SlotQuote:
+					if (ClickRow(panel, ref y, out int quoteWhich)) {
+						if (quoteWhich == 0) {
+							QuoteWidget.EnsureFile();
+							WeFiles.OpenFile(WeSave.QuotePath);
+						}
+						else
+							WeFiles.OpenFolder(WeSave.RootFolder);
+					}
+
+					break;
+				case SlotDiscord:
+					if (ClickDiscordIdField(panel, ref y))
+						DiscordWidget.OpenIdEditor();
+					else if (discordWasOn && DiscordWidget.Editing)
+						DiscordWidget.Unfocus();
+					SkipHint(ref y);
+					SkipHint(ref y);
+					SkipHint(ref y);
+					if (ClickDiscordStyle(panel, ref y))
+						WeSettings.SetDiscordStyle(0);
+					if (ClickDiscordStyle(panel, ref y))
+						WeSettings.SetDiscordStyle(1);
+					if (ClickDiscordStyle(panel, ref y))
+						WeSettings.SetDiscordStyle(2);
+					break;
+			}
+		}
+
+		private static void TickWidgetTiles()
+		{
+			if (!IsOpen || _id != WePanelId.Widgets) {
+				for (int i = 0; i < SlotCount; i++)
+					TileOpen[i] = MathHelper.Lerp(TileOpen[i], 0f, 0.28f);
+				_tileHover = -1;
+				return;
+			}
+
+			Rectangle panel = PanelRect();
+			Rectangle view = View(panel);
+			int y = view.Y - (int)_scroll;
+			int hover = -1;
+			Point mouse = new(Main.mouseX, Main.mouseY);
+			if (view.Contains(mouse)) {
+				for (int slot = 0; slot < SlotCount; slot++) {
+					int height = BandHeight(slot);
+					var band = new Rectangle(panel.X + 16, y, panel.Width - 32, Math.Max(1, height - WidgetTileGap));
+					if (band.Contains(mouse))
+						hover = slot;
+					y += height;
+				}
+			}
+
+			_tileHover = hover;
+			for (int slot = 0; slot < SlotCount; slot++) {
+				float prev = TileOpen[slot];
+				float target = TileOn(slot) && SettingsNatural(slot) > 0f && hover == slot ? 1f : 0f;
+				TileOpen[slot] = MathHelper.Lerp(prev, target, 0.2f);
+				if (Math.Abs(TileOpen[slot] - target) < 0.012f)
+					TileOpen[slot] = target;
+				if (TileOpen[slot] > prev + 0.004f)
+					NudgeScrollToSlot(slot);
+			}
+
+			_scroll = MathHelper.Clamp(_scroll, 0f, MaxScroll());
+		}
+
+		private static void NudgeScrollToSlot(int slot)
+		{
+			Rectangle view = View(PanelRect());
+			int y = view.Y - (int)_scroll;
+			for (int i = 0; i < slot; i++)
+				y += BandHeight(i);
+			int bottom = y + BandHeight(slot) - WidgetTileGap;
+			if (bottom > view.Bottom - 8)
+				_scroll += bottom - (view.Bottom - 8);
+			if (y < view.Y + 4)
+				_scroll -= view.Y + 4 - y;
+			_scroll = MathHelper.Clamp(_scroll, 0f, MaxScroll());
+		}
+
+		private static int BandHeight(int slot) =>
+			WidgetTileH + WidgetTileGap + (TileOn(slot) ? SettingsExtra(slot) : 0);
+
+		private static int SettingsExtra(int slot)
+		{
+			if (!TileOn(slot))
+				return 0;
+			return (int)MathF.Round(SettingsNatural(slot) * TileOpen[slot]);
+		}
+
+		private static float SettingsNatural(int slot) => slot switch {
+			SlotClock => 126f,
+			SlotQuote => 40f,
+			SlotDiscord => 52f + 84f + DiscordStyleStep * 3,
+			_ => 0f
+		};
+
+		private static bool TileOn(int slot) => slot switch {
+			SlotPlayer => WeSave.Data.PlayerWidget,
+			SlotClock => WeSave.Data.ClockWidget,
+			SlotQuote => WeSave.Data.QuoteWidget,
+			SlotMoon => WeSave.Data.MoonWidget,
+			SlotDiscord => WeSave.Data.DiscordWidget,
+			_ => false
+		};
 
 		private static void DrawDiscordStyle(SpriteBatch spriteBatch, Rectangle panel, ref int y, int style)
 		{
@@ -628,13 +783,13 @@ namespace WallpaperEngine.UI
 			Color border = on || hover ? WeAccent.Light : new Color(72, 76, 84);
 			WeDraw.Fill(spriteBatch, hit, fill * ((hover ? 0.96f : on ? 0.88f : 0.78f) * _fade));
 			WeDraw.Border(spriteBatch, hit, border * _fade);
-			var preview = new Rectangle(hit.X + 8, hit.Y + 6, hit.Width - 16, 54);
+			var preview = new Rectangle(hit.X + 8, hit.Y + 6, hit.Width - 16, 46);
 			WeDraw.Fill(spriteBatch, preview, new Color(14, 16, 20) * _fade);
 			DiscordWidget.DrawPreview(spriteBatch, preview, _fade * (on ? 1f : 0.45f), style);
 			string key = style == 1 ? "DiscordStyleBanner" : style == 2 ? "DiscordStyleRoster" : "DiscordStyleCompact";
 			ChatManager.DrawColorCodedStringWithShadow(
 				spriteBatch, FontAssets.MouseText.Value, WeText.UI(key),
-				new Vector2(hit.X + 12, hit.Bottom - 24),
+				new Vector2(hit.X + 12, hit.Bottom - 22),
 				(on ? Color.White : new Color(168, 172, 180)) * _fade, 0f, Vector2.Zero, new Vector2(0.76f));
 			y += DiscordStyleStep;
 		}
@@ -1019,6 +1174,12 @@ namespace WallpaperEngine.UI
 				return new Rectangle(Main.screenWidth - w - 16, 20, w, h);
 			}
 
+			if (_id == WePanelId.Widgets) {
+				int ww = Math.Min(580, Main.screenWidth - 72);
+				int wh = Math.Min(640, Main.screenHeight - 56);
+				return new Rectangle((Main.screenWidth - ww) / 2, (Main.screenHeight - wh) / 2, ww, wh);
+			}
+
 			int cw = Math.Min(560, Main.screenWidth - 80);
 			int ch = Math.Min(520, Main.screenHeight - 80);
 			return new Rectangle((Main.screenWidth - cw) / 2, (Main.screenHeight - ch) / 2, cw, ch);
@@ -1070,10 +1231,20 @@ namespace WallpaperEngine.UI
 
 		private static float MaxScroll()
 		{
+			if (_id == WePanelId.Widgets) {
+				float content = 0f;
+				for (int i = 0; i < SlotCount; i++)
+					content += BandHeight(i);
+				int hidden = 0;
+				foreach (WeElementRecord _ in SceneGraph.Hidden())
+					hidden++;
+				content += 42f + 28f + hidden * 42f + 16f;
+				return Math.Max(0f, content - View(PanelRect()).Height);
+			}
+
 			float extra = WeSave.Data.Layers.Count * 42f + WeSave.Data.Wallpapers.Count * 58f + WeSave.Data.Logos.Count * 58f +
 			              WeSave.Data.Tracks.Count * 42f + WeCatalog.Skies.Count * 62f + WeCatalog.Logos.Count * 62f;
-			float floor = _id == WePanelId.Widgets ? 1100f : 720f;
-			return floor + extra;
+			return 720f + extra;
 		}
 	}
 }

@@ -80,6 +80,7 @@ UI: {
 	AddQuote: Приветствие / цитата
 	AddMoon: Фаза луны
 	AddDiscord: Сервер Discord
+	WidgetHoverSettings: Наведи для настроек
 	OpenQuotes: Редактировать цитаты
 	Clock24h: 24 часа
 	Clock12h: 12 часов
@@ -92,6 +93,9 @@ UI: {
 	DiscordStyleBanner: Широкий баннер
 	DiscordStyleRoster: Список участников
 	DiscordJoin: В голос
+	DiscordJoinShort: Войти
+	DiscordVoice: Голос
+	DiscordVoiceEmpty: Пусто
 	DiscordOnline: %n в сети
 	DiscordInVoice: %n в голосе
 	DiscordNeedWidgetShort: Включи виджет сервера

@@ -199,17 +199,20 @@ namespace WallpaperEngine.UI
 			GraphicsDevice gd = Main.instance.GraphicsDevice;
 			Rectangle scaled = ToNative(uiClip);
 			scaled = Rectangle.Intersect(scaled, gd.Viewport.Bounds);
+			if (Scissor.HasValue)
+				scaled = Rectangle.Intersect(scaled, Scissor.Value);
 			if (scaled.Width < 2 || scaled.Height < 2)
 				return;
 
 			Rectangle old = gd.ScissorRectangle;
+			Rectangle? previous = Scissor;
 			spriteBatch.End();
 			Scissor = scaled;
 			gd.ScissorRectangle = scaled;
 			BeginUi(spriteBatch);
 			draw();
 			spriteBatch.End();
-			Scissor = null;
+			Scissor = previous;
 			gd.ScissorRectangle = old;
 			BeginUi(spriteBatch);
 		}

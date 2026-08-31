@@ -82,7 +82,7 @@ namespace WallpaperEngine.Content
 
 			if (WeModMenu.OnTitle) {
 				HandleInput();
-				steal = WeSplash.Visible || WePanels.IsOpen || WrenchToolbar.Busy || LayoutEditor.Busy || WidgetHost.Busy;
+				steal = WeSplash.Visible || WePanels.IsOpen || WePanels.AteInput || WrenchToolbar.Busy || LayoutEditor.Busy || WidgetHost.Busy;
 				if (steal) {
 					Main.blockMouse = true;
 					Main.mouseLeftRelease = false;

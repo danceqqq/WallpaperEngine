@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework.Graphics;
 using WallpaperEngine.Content;
 using WallpaperEngine.Core;
 using WallpaperEngine.Audio;
+using WallpaperEngine.UI;
 
 namespace WallpaperEngine.Widgets
 {
@@ -23,6 +24,8 @@ namespace WallpaperEngine.Widgets
 		internal static void HandleInput()
 		{
 			if (!WeModMenu.OnTitle)
+				return;
+			if (WePanels.IsOpen || WePanels.AteInput)
 				return;
 			WePlayerUI.HandleInput();
 			DiscordWidget.HandleInput();

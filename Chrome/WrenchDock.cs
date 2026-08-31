@@ -63,6 +63,12 @@ namespace WallpaperEngine.Chrome
 			if (!WeModMenu.OnTitle)
 				return;
 
+			if (WePanels.IsOpen) {
+				_hover = -1;
+				Main.blockMouse = true;
+				return;
+			}
+
 			_hover = HitIndex();
 			if (_hover >= 0 || HoverBar())
 				Main.blockMouse = true;

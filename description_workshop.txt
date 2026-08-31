@@ -12,10 +12,17 @@ Logo and wallpaper are independent. You can take a logo from one mod menu and a 
 [*] Borrow skies and logos from other loaded menu themes (Calamity, Infernum, Fables, Wrath of the Gods, Catalyst, and others)
 [*] Layer images and effects (stars, fog, rain, beat pulse, and more)
 [*] Music player with custom ogg/mp3/wav, shuffle, loop, and a delete button per track
-[*] Clock, greeting, moon-phase, and Discord server widgets
+[*] Clock, greeting, moon-phase, and Discord server widgets (voice channels, Join opens the Discord app)
 [*] Drag, scale, or hide title-screen elements
 [*] Recolor the tModLoader window caption and border, and pick circle or bar style for the customize hub (client)
 [/list]
+
+[h2]Changelog[/h2]
+[b]0.7[/b] Discord banner shows voice channels and scrolls. Member list has Join on people in voice. Widget tiles expand settings on hover. Clicks no longer pass through open panels into the hub underneath.
+[b]0.6[/b] Catalyst logo bounce. Insouciant live rift sky. Discord widget (paste server ID, live refresh, invite icon, Join Voice).
+[b]0.5[/b] Circle or iOS-style customize hub. Menu button hitboxes stay with the text after moving them.
+[b]0.4[/b] Delete custom tracks. Moon widget. Live vs still labels on borrowed skies.
+[b]0.3[/b] Borrowed skies run the other menu's own draw. Ascent / Carmine Yonder / Catalyst logo and sky stay independent.
 
 [h2]Borrowed themes[/h2]
 Logo and wallpaper are taken from the other mod's menu theme as two independent pieces. The sky is that theme's own background pass (shaders, clouds, animation). The logo is that theme's logo pass. Wallpaper Engine stays selected; the other theme is never left as the current menu.

@@ -80,6 +80,7 @@ UI: {
 	AddQuote: Greeting / quote
 	AddMoon: Moon phase
 	AddDiscord: Discord server
+	WidgetHoverSettings: Hover for settings
 	OpenQuotes: Edit quotes
 	Clock24h: 24-hour time
 	Clock12h: 12-hour time
@@ -92,6 +93,9 @@ UI: {
 	DiscordStyleBanner: Wide banner
 	DiscordStyleRoster: Member list
 	DiscordJoin: Join Voice
+	DiscordJoinShort: Join
+	DiscordVoice: Voice
+	DiscordVoiceEmpty: Empty
 	DiscordOnline: %n online
 	DiscordInVoice: %n in voice
 	DiscordNeedWidgetShort: Enable Server Widget
