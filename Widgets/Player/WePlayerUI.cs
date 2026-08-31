@@ -82,6 +82,17 @@ namespace WallpaperEngine.Audio
 			});
 		}
 
+		internal static void DrawPreview(SpriteBatch spriteBatch, Rectangle box, float fade)
+		{
+			if (fade <= 0.02f || box.Width < 8 || box.Height < 8)
+				return;
+
+			Vector2 center = box.Center.ToVector2();
+			float radius = Math.Min(box.Width, box.Height) * 0.34f;
+			RoundButton.Draw(spriteBatch, center, radius, fade, !WePlaylist.IsPaused);
+			DrawPlayPause(spriteBatch, center, radius * 0.38f, WeAccent.Glyph(false) * fade, WePlaylist.IsPaused);
+		}
+
 		internal static void Unload() => Reset();
 
 		private static bool Enabled => WeSave.Data.PlayerWidget && SceneGraph.Visible(SceneGraph.Player);

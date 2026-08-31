@@ -44,6 +44,26 @@ namespace WallpaperEngine.Widgets
 				RoundButton.Tooltip(spriteBatch, center, radius, WeText.UI("MoonPhase" + Math.Clamp(Main.moonPhase, 0, 7)), fade));
 		}
 
+		internal static void DrawPreview(SpriteBatch spriteBatch, Rectangle box, float fade)
+		{
+			if (fade <= 0.02f || box.Width < 8 || box.Height < 8)
+				return;
+
+			Vector2 center = box.Center.ToVector2();
+			float radius = Math.Min(box.Width, box.Height) * 0.36f;
+			RoundButton.Draw(spriteBatch, center, radius, fade);
+			Texture2D moon = MoonTexture();
+			if (moon == null || moon.IsDisposed)
+				return;
+
+			Rectangle src = Frame(moon);
+			float size = radius * 1.5f;
+			float scale = size / Math.Max(1, Math.Max(src.Width, src.Height));
+			spriteBatch.Draw(
+				moon, center, src, Color.White * fade, 0f,
+				new Vector2(src.Width, src.Height) * 0.5f, scale, SpriteEffects.None, 0f);
+		}
+
 		private static Texture2D MoonTexture()
 		{
 			try {

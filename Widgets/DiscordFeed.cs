@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -28,6 +30,7 @@ namespace WallpaperEngine.Widgets
 		internal string Name = "";
 		internal string Status = "online";
 		internal string Voice = "";
+		internal string ChannelId = "";
 		internal Texture2D Avatar;
 	}
 
@@ -35,14 +38,18 @@ namespace WallpaperEngine.Widgets
 	{
 		internal string Name = "";
 		internal string Invite = "";
+		internal string InviteCode = "";
 		internal string Voice = "";
+		internal string VoiceChannelId = "";
 		internal int Presence;
+		internal Texture2D Icon;
 		internal DiscordMember[] Members = Array.Empty<DiscordMember>();
 	}
 
 	internal static class DiscordFeed
 	{
-		private const int PollSeconds = 45;
+		private const int PollOkSeconds = 15;
+		private const int PollRetrySeconds = 8;
 		private static readonly HttpClient Http;
 		private static readonly Regex SnowflakeRun = new(@"\d{17,20}", RegexOptions.Compiled);
 
@@ -57,7 +64,7 @@ namespace WallpaperEngine.Widgets
 
 		static DiscordFeed()
 		{
-			Http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+			Http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
 			Http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WallpaperEngine-tModLoader/0.6");
 			Http.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
 		}
@@ -168,6 +175,40 @@ namespace WallpaperEngine.Widgets
 			Tick();
 		}
 
+		internal static void OpenJoin()
+		{
+			string guild = _guildId;
+			string voice = _snap?.VoiceChannelId ?? "";
+			string code = _snap?.InviteCode ?? "";
+			if (!string.IsNullOrEmpty(guild) && !string.IsNullOrEmpty(voice) && TryProtocol("discord://-/channels/" + guild + "/" + voice))
+				return;
+			if (!string.IsNullOrEmpty(code) && TryProtocol("discord://-/invite/" + code))
+				return;
+			if (!string.IsNullOrEmpty(guild) && TryProtocol("discord://-/channels/" + guild))
+				return;
+			if (!string.IsNullOrEmpty(_snap?.Invite)) {
+				try {
+					Utils.OpenToURL(_snap.Invite);
+				}
+				catch {
+				}
+			}
+		}
+
+		private static bool TryProtocol(string url)
+		{
+			try {
+				Process.Start(new ProcessStartInfo {
+					FileName = url,
+					UseShellExecute = true
+				});
+				return true;
+			}
+			catch {
+				return false;
+			}
+		}
+
 		private static void MigrateLegacyFile()
 		{
 			if (_migrated)
@@ -209,48 +250,51 @@ namespace WallpaperEngine.Widgets
 				_status = DiscordFeedStatus.Loading;
 
 			Task.Run(async () => {
+				int delay = PollOkSeconds;
 				try {
 					using HttpResponseMessage response = await Http.GetAsync("https://discord.com/api/guilds/" + id + "/widget.json");
 					if (_fetchId != id)
 						return;
 
 					if (response.StatusCode == System.Net.HttpStatusCode.Forbidden) {
+						delay = PollRetrySeconds;
 						ApplyStatus(id, DiscordFeedStatus.NeedWidget, null);
 						return;
 					}
 
 					if (response.StatusCode == System.Net.HttpStatusCode.NotFound) {
+						delay = PollRetrySeconds;
 						ApplyStatus(id, DiscordFeedStatus.BadId, null);
 						return;
 					}
 
 					if (!response.IsSuccessStatusCode) {
+						delay = PollRetrySeconds;
 						ApplyStatus(id, DiscordFeedStatus.NetError, null);
 						return;
 					}
 
 					string json = await response.Content.ReadAsStringAsync();
-					if (!TryParse(json, out DiscordSnap snap, out List<(DiscordMember member, string url)> pending)) {
+					if (!TryParse(json, out DiscordSnap snap, out List<(DiscordMember member, string url)> pending, out string iconHint)) {
+						delay = PollRetrySeconds;
 						ApplyStatus(id, DiscordFeedStatus.NetError, null);
 						return;
 					}
 
-					foreach (var (member, url) in pending) {
-						if (_fetchId != id)
-							return;
-						member.Avatar = await LoadAvatar(url);
-					}
-
+					ApplyCachedIcon(snap, iconHint);
 					ApplyStatus(id, DiscordFeedStatus.Ok, snap);
+					_ = FillAvatars(id, pending);
+					_ = FillInviteAndIcon(id, snap, iconHint);
 				}
 				catch {
+					delay = PollRetrySeconds;
 					ApplyStatus(id, DiscordFeedStatus.NetError, null);
 				}
 				finally {
 					if (_fetchId == id)
 						_inFlight = false;
 					if (_guildId == id)
-						_nextFetch = DateTime.UtcNow.AddSeconds(PollSeconds);
+						_nextFetch = DateTime.UtcNow.AddSeconds(delay);
 				}
 			});
 		}
@@ -274,15 +318,17 @@ namespace WallpaperEngine.Widgets
 			Main.QueueMainThreadAction(Apply);
 		}
 
-		private static bool TryParse(string json, out DiscordSnap snap, out List<(DiscordMember member, string url)> pending)
+		private static bool TryParse(string json, out DiscordSnap snap, out List<(DiscordMember member, string url)> pending, out string iconHint)
 		{
 			snap = new DiscordSnap();
 			pending = new List<(DiscordMember, string)>();
+			iconHint = "";
 			try {
 				using JsonDocument doc = JsonDocument.Parse(json);
 				JsonElement root = doc.RootElement;
 				snap.Name = Str(root, "name");
 				snap.Invite = Str(root, "instant_invite");
+				snap.InviteCode = InviteCodeFrom(snap.Invite);
 				if (root.TryGetProperty("presence_count", out JsonElement count) && count.TryGetInt32(out int n))
 					snap.Presence = n;
 
@@ -291,15 +337,21 @@ namespace WallpaperEngine.Widgets
 					foreach (JsonElement ch in chans.EnumerateArray()) {
 						string cid = Str(ch, "id");
 						string cname = Str(ch, "name");
-						if (cid.Length > 0 && cname.Length > 0)
+						if (cid.Length == 0)
+							continue;
+						if (cname.Length > 0)
 							channels[cid] = cname;
+						if (string.IsNullOrEmpty(snap.VoiceChannelId))
+							snap.VoiceChannelId = cid;
+						if (string.IsNullOrEmpty(snap.Voice) && cname.Length > 0)
+							snap.Voice = cname;
 					}
 				}
 
 				var members = new List<DiscordMember>();
 				if (root.TryGetProperty("members", out JsonElement list) && list.ValueKind == JsonValueKind.Array) {
 					foreach (JsonElement item in list.EnumerateArray()) {
-						if (members.Count >= 12)
+						if (members.Count >= 48)
 							break;
 						var member = new DiscordMember {
 							Name = Str(item, "username"),
@@ -309,10 +361,14 @@ namespace WallpaperEngine.Widgets
 							continue;
 
 						string channelId = Str(item, "channel_id");
-						if (channelId.Length > 0 && channels.TryGetValue(channelId, out string voice)) {
-							member.Voice = voice;
-							if (string.IsNullOrEmpty(snap.Voice))
-								snap.Voice = voice;
+						member.ChannelId = channelId;
+						if (channelId.Length > 0) {
+							member.Voice = channels.TryGetValue(channelId, out string voice) && voice.Length > 0
+								? voice
+								: "Voice";
+							snap.VoiceChannelId = channelId;
+							if (string.IsNullOrEmpty(snap.Voice) || snap.Voice == "Voice")
+								snap.Voice = member.Voice;
 						}
 
 						string url = Str(item, "avatar_url");
@@ -322,6 +378,7 @@ namespace WallpaperEngine.Widgets
 					}
 				}
 
+				members.Sort(CompareMembers);
 				snap.Members = members.ToArray();
 				if (string.IsNullOrEmpty(snap.Name))
 					snap.Name = "Discord";
@@ -332,9 +389,162 @@ namespace WallpaperEngine.Widgets
 			}
 		}
 
-		private static async Task<Texture2D> LoadAvatar(string url)
+		private static int CompareMembers(DiscordMember a, DiscordMember b)
 		{
-			if (string.IsNullOrEmpty(url))
+			int voice = (string.IsNullOrEmpty(a?.Voice) ? 1 : 0).CompareTo(string.IsNullOrEmpty(b?.Voice) ? 1 : 0);
+			if (voice != 0)
+				return voice;
+			return string.Compare(a?.Name, b?.Name, StringComparison.OrdinalIgnoreCase);
+		}
+
+		private static async Task FillAvatars(string id, List<(DiscordMember member, string url)> pending)
+		{
+			if (pending == null || pending.Count == 0)
+				return;
+
+			using var gate = new SemaphoreSlim(4);
+			var tasks = new List<Task>(pending.Count);
+			foreach (var (member, url) in pending) {
+				DiscordMember who = member;
+				string src = url;
+				tasks.Add(Task.Run(async () => {
+					await gate.WaitAsync().ConfigureAwait(false);
+					try {
+						if (_fetchId != id)
+							return;
+						Texture2D tex = await LoadAvatar(id, src).ConfigureAwait(false);
+						if (tex == null || _fetchId != id)
+							return;
+						who.Avatar = tex;
+					}
+					finally {
+						gate.Release();
+					}
+				}));
+			}
+
+			try {
+				await Task.WhenAll(tasks).ConfigureAwait(false);
+			}
+			catch {
+			}
+		}
+
+		private static async Task FillInviteAndIcon(string id, DiscordSnap snap, string iconHint)
+		{
+			if (snap == null || _fetchId != id)
+				return;
+
+			string iconUrl = iconHint ?? "";
+			try {
+				string code = snap.InviteCode;
+				if (string.IsNullOrEmpty(code))
+					code = InviteCodeFrom(snap.Invite);
+				if (!string.IsNullOrEmpty(code)) {
+					using HttpResponseMessage response = await Http.GetAsync("https://discord.com/api/invites/" + Uri.EscapeDataString(code));
+					if (_fetchId != id)
+						return;
+					if (response.IsSuccessStatusCode) {
+						string json = await response.Content.ReadAsStringAsync();
+						ReadInvite(json, snap, id, out string fromInvite);
+						if (fromInvite.Length > 0)
+							iconUrl = fromInvite;
+					}
+				}
+			}
+			catch {
+			}
+
+			if (string.IsNullOrEmpty(iconUrl) || _fetchId != id)
+				return;
+
+			Texture2D icon = await LoadAvatar(id, iconUrl).ConfigureAwait(false);
+			if (icon == null || _fetchId != id)
+				return;
+
+			Main.QueueMainThreadAction(() => {
+				if (_guildId != id || _snap != snap)
+					return;
+				snap.Icon = icon;
+			});
+		}
+
+		private static void ReadInvite(string json, DiscordSnap snap, string guildId, out string iconUrl)
+		{
+			iconUrl = "";
+			try {
+				using JsonDocument doc = JsonDocument.Parse(json);
+				JsonElement root = doc.RootElement;
+				if (root.TryGetProperty("guild", out JsonElement guild)) {
+					string icon = Str(guild, "icon");
+					string gid = Str(guild, "id");
+					if (string.IsNullOrEmpty(gid))
+						gid = guildId;
+					if (icon.Length > 0 && gid.Length > 0)
+						iconUrl = "https://cdn.discordapp.com/icons/" + gid + "/" + icon + ".png?size=128";
+					if (string.IsNullOrEmpty(snap.Name))
+						snap.Name = Str(guild, "name");
+				}
+
+				if (!root.TryGetProperty("channel", out JsonElement channel))
+					return;
+
+				string cid = Str(channel, "id");
+				string cname = Str(channel, "name");
+				int type = IntOf(channel, "type");
+				if (cid.Length == 0)
+					return;
+				if (string.IsNullOrEmpty(snap.VoiceChannelId))
+					snap.VoiceChannelId = cid;
+				if ((type == 2 || type == 13) && string.IsNullOrEmpty(snap.Voice) && cname.Length > 0)
+					snap.Voice = cname;
+			}
+			catch {
+			}
+		}
+
+		private static void ApplyCachedIcon(DiscordSnap snap, string iconUrl)
+		{
+			if (snap == null)
+				return;
+			if (!string.IsNullOrEmpty(iconUrl)) {
+				lock (Avatars) {
+					if (Avatars.TryGetValue(iconUrl, out Texture2D cached) && cached != null && !cached.IsDisposed)
+						snap.Icon = cached;
+				}
+			}
+
+			if (snap.Icon == null && _snap?.Icon != null && !_snap.Icon.IsDisposed)
+				snap.Icon = _snap.Icon;
+		}
+
+		private static string InviteCodeFrom(string invite)
+		{
+			if (string.IsNullOrWhiteSpace(invite))
+				return "";
+
+			string s = invite.Trim();
+			int q = s.IndexOf('?');
+			if (q >= 0)
+				s = s[..q];
+			s = s.TrimEnd('/');
+			int slash = s.LastIndexOf('/');
+			if (slash >= 0)
+				s = s[(slash + 1)..];
+			if (s.Length < 2 || s.Length > 64)
+				return "";
+			for (int i = 0; i < s.Length; i++) {
+				char c = s[i];
+				if (!char.IsLetterOrDigit(c) && c != '-' && c != '_')
+					return "";
+			}
+
+			return s;
+		}
+
+		private static async Task<Texture2D> LoadAvatar(string fetchId, string url)
+		{
+			if (string.IsNullOrEmpty(url) || _fetchId != fetchId)
 				return null;
 
 			lock (Avatars) {
@@ -343,12 +553,16 @@ namespace WallpaperEngine.Widgets
 			}
 
 			try {
-				byte[] bytes = await Http.GetByteArrayAsync(url);
+				byte[] bytes = await Http.GetByteArrayAsync(url).ConfigureAwait(false);
+				if (_fetchId != fetchId)
+					return null;
+
 				var done = new TaskCompletionSource<Texture2D>();
 				Main.QueueMainThreadAction(() => {
 					Texture2D ready = null;
 					try {
-						ready = StampCircle(bytes);
+						if (_fetchId == fetchId)
+							ready = StampCircle(bytes);
 						if (ready != null) {
 							lock (Avatars) {
 								Avatars[url] = ready;
@@ -361,7 +575,7 @@ namespace WallpaperEngine.Widgets
 
 					done.TrySetResult(ready);
 				});
-				return await done.Task;
+				return await done.Task.ConfigureAwait(false);
 			}
 			catch {
 				return null;
@@ -435,6 +649,13 @@ namespace WallpaperEngine.Widgets
 			if (!el.TryGetProperty(name, out JsonElement value) || value.ValueKind != JsonValueKind.String)
 				return "";
 			return value.GetString() ?? "";
+		}
+
+		private static int IntOf(JsonElement el, string name)
+		{
+			if (!el.TryGetProperty(name, out JsonElement value) || !value.TryGetInt32(out int n))
+				return 0;
+			return n;
 		}
 	}
 }

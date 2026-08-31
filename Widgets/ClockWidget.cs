@@ -83,5 +83,33 @@ namespace WallpaperEngine.Widgets
 				new Vector2(center.X - size.X * 0.5f, center.Y + radius + 6f),
 				Color.White * fade, 0f, Vector2.Zero, new Vector2(0.7f * Scale));
 		}
+
+		internal static void DrawPreview(SpriteBatch spriteBatch, Rectangle box, float fade)
+		{
+			if (fade <= 0.02f || box.Width < 8 || box.Height < 8)
+				return;
+
+			DateTime now = DateTime.Now;
+			Vector2 center = box.Center.ToVector2();
+			if (WeSave.Data.ClockAnalog) {
+				float radius = Math.Min(box.Width, box.Height) * 0.36f;
+				RoundButton.Draw(spriteBatch, center, radius, fade);
+				float hour = (now.Hour % 12 + now.Minute / 60f) / 12f * MathHelper.TwoPi - MathHelper.PiOver2;
+				float minute = (now.Minute + now.Second / 60f) / 60f * MathHelper.TwoPi - MathHelper.PiOver2;
+				float second = now.Second / 60f * MathHelper.TwoPi - MathHelper.PiOver2;
+				RoundButton.DrawThick(spriteBatch, WeDraw.Pixel, center, center + hour.ToRotationVector2() * radius * 0.52f, 2.6f, WeAccent.Light * fade);
+				RoundButton.DrawThick(spriteBatch, WeDraw.Pixel, center, center + minute.ToRotationVector2() * radius * 0.78f, 1.8f, Color.White * fade);
+				RoundButton.DrawThick(spriteBatch, WeDraw.Pixel, center, center + second.ToRotationVector2() * radius * 0.86f, 1.2f, WeAccent.Mid * fade);
+				return;
+			}
+
+			string time = now.ToString(WeSave.Data.Clock24h ? "HH:mm" : "h:mm tt", CultureInfo.CurrentCulture);
+			var font = FontAssets.DeathText.Value;
+			Vector2 size = font.MeasureString(time);
+			float scale = Math.Min((box.Width - 10f) / Math.Max(1f, size.X), (box.Height - 8f) / Math.Max(1f, size.Y));
+			scale = Math.Min(scale, 0.48f);
+			Vector2 pos = center - size * scale * 0.5f;
+			ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, time, pos, Color.White * fade, 0f, Vector2.Zero, new Vector2(scale));
+		}
 	}
 }

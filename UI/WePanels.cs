@@ -37,6 +37,10 @@ namespace WallpaperEngine.UI
 		private static bool _mouseHeld;
 		private static int _lastWheel;
 		private static string _dragSlider;
+		private const int WidgetTileH = 76;
+		private const int WidgetTileStep = 84;
+		private const int DiscordStyleH = 88;
+		private const int DiscordStyleStep = 96;
 
 		internal static bool IsOpen => _id != WePanelId.None;
 		internal static bool Is(WePanelId id) => _id == id;
@@ -383,29 +387,30 @@ namespace WallpaperEngine.UI
 
 		private static void DrawWidgets(SpriteBatch spriteBatch, Rectangle panel, ref int y)
 		{
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("AddPlayer"), WeSave.Data.PlayerWidget);
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("AddClock"), WeSave.Data.ClockWidget);
+			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddPlayer"), WeSave.Data.PlayerWidget, WePlayerUI.DrawPreview);
+			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddClock"), WeSave.Data.ClockWidget, ClockWidget.DrawPreview);
 			if (WeSave.Data.ClockWidget) {
 				DrawCard(spriteBatch, panel, ref y, WeText.UI(WeSave.Data.Clock24h ? "Clock24h" : "Clock12h"), WeSave.Data.Clock24h);
 				DrawCard(spriteBatch, panel, ref y, WeText.UI(WeSave.Data.ClockAnalog ? "ClockAnalog" : "ClockDigital"), WeSave.Data.ClockAnalog);
 				DrawCard(spriteBatch, panel, ref y, WeText.UI("ClockDate"), WeSave.Data.ClockDate);
 			}
 
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("AddQuote"), WeSave.Data.QuoteWidget);
+			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddQuote"), WeSave.Data.QuoteWidget, QuoteWidget.DrawPreview);
 			if (WeSave.Data.QuoteWidget)
 				DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("OpenQuotes"), WeText.UI("OpenFolder"));
 
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("AddMoon"), WeSave.Data.MoonWidget);
+			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddMoon"), WeSave.Data.MoonWidget, MoonWidget.DrawPreview);
 
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("AddDiscord"), WeSave.Data.DiscordWidget);
+			DrawWidgetTile(spriteBatch, panel, ref y, WeText.UI("AddDiscord"), WeSave.Data.DiscordWidget,
+				(sb, box, fade) => DiscordWidget.DrawPreview(sb, box, fade, WeSave.Data.DiscordStyle));
 			if (WeSave.Data.DiscordWidget) {
 				DrawDiscordIdField(spriteBatch, panel, ref y);
 				DrawHint(spriteBatch, panel, ref y, DiscordWidget.StatusLine());
 				DrawHint(spriteBatch, panel, ref y, WeText.UI("DiscordHint1"));
 				DrawHint(spriteBatch, panel, ref y, WeText.UI("DiscordHint2"));
-				DrawCard(spriteBatch, panel, ref y, WeText.UI("DiscordStyleCompact"), WeSave.Data.DiscordStyle == 0);
-				DrawCard(spriteBatch, panel, ref y, WeText.UI("DiscordStyleBanner"), WeSave.Data.DiscordStyle == 1);
-				DrawCard(spriteBatch, panel, ref y, WeText.UI("DiscordStyleRoster"), WeSave.Data.DiscordStyle == 2);
+				DrawDiscordStyle(spriteBatch, panel, ref y, 0);
+				DrawDiscordStyle(spriteBatch, panel, ref y, 1);
+				DrawDiscordStyle(spriteBatch, panel, ref y, 2);
 			}
 
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("BtnClean"), WeSave.Data.CleanChrome);
@@ -416,12 +421,12 @@ namespace WallpaperEngine.UI
 
 		private static void ClickWidgets(Rectangle panel, ref int y)
 		{
-			if (ClickCard(panel, ref y)) {
+			if (ClickWidgetTile(panel, ref y)) {
 				WeSettings.SetPlayerWidget(!WeSave.Data.PlayerWidget);
 				WeToast.Show(WeSave.Data.PlayerWidget ? "ToastWidgetOn" : "ToastWidgetOff");
 			}
 
-			if (ClickCard(panel, ref y)) {
+			if (ClickWidgetTile(panel, ref y)) {
 				WeSettings.SetClockWidget(!WeSave.Data.ClockWidget);
 				WeToast.Show(WeSave.Data.ClockWidget ? "ToastWidgetOn" : "ToastWidgetOff");
 			}
@@ -443,7 +448,7 @@ namespace WallpaperEngine.UI
 				}
 			}
 
-			if (ClickCard(panel, ref y)) {
+			if (ClickWidgetTile(panel, ref y)) {
 				WeSettings.SetQuoteWidget(!WeSave.Data.QuoteWidget);
 				if (WeSave.Data.QuoteWidget)
 					QuoteWidget.EnsureFile();
@@ -459,13 +464,13 @@ namespace WallpaperEngine.UI
 					WeFiles.OpenFolder(WeSave.RootFolder);
 			}
 
-			if (ClickCard(panel, ref y)) {
+			if (ClickWidgetTile(panel, ref y)) {
 				WeSettings.SetMoonWidget(!WeSave.Data.MoonWidget);
 				WeToast.Show(WeSave.Data.MoonWidget ? "ToastWidgetOn" : "ToastWidgetOff");
 			}
 
 			bool discordWasOn = WeSave.Data.DiscordWidget;
-			if (ClickCard(panel, ref y)) {
+			if (ClickWidgetTile(panel, ref y)) {
 				if (discordWasOn) {
 					WeSettings.SetDiscordWidget(false);
 					DiscordWidget.Unfocus();
@@ -487,11 +492,11 @@ namespace WallpaperEngine.UI
 				SkipHint(ref y);
 				SkipHint(ref y);
 				SkipHint(ref y);
-				if (ClickCard(panel, ref y))
+				if (ClickDiscordStyle(panel, ref y))
 					WeSettings.SetDiscordStyle(0);
-				if (ClickCard(panel, ref y))
+				if (ClickDiscordStyle(panel, ref y))
 					WeSettings.SetDiscordStyle(1);
-				if (ClickCard(panel, ref y))
+				if (ClickDiscordStyle(panel, ref y))
 					WeSettings.SetDiscordStyle(2);
 			}
 
@@ -585,6 +590,59 @@ namespace WallpaperEngine.UI
 		{
 			Rectangle hit = Row(panel, y, 92);
 			y += 100;
+			return hit.Contains(Main.mouseX, Main.mouseY);
+		}
+
+		private static void DrawWidgetTile(SpriteBatch spriteBatch, Rectangle panel, ref int y, string title, bool on, Action<SpriteBatch, Rectangle, float> preview)
+		{
+			Rectangle hit = Row(panel, y, WidgetTileH);
+			bool hover = hit.Contains(Main.mouseX, Main.mouseY);
+			Color fill = on ? WeAccent.Deep : new Color(22, 24, 30);
+			Color border = on || hover ? WeAccent.Light : new Color(72, 76, 84);
+			WeDraw.Fill(spriteBatch, hit, fill * ((hover ? 0.96f : on ? 0.88f : 0.78f) * _fade));
+			WeDraw.Border(spriteBatch, hit, border * _fade);
+			var previewBox = new Rectangle(hit.X + 8, hit.Y + 8, 156, hit.Height - 16);
+			WeDraw.Fill(spriteBatch, previewBox, new Color(14, 16, 20) * _fade);
+			float dim = on ? 1f : 0.42f;
+			preview?.Invoke(spriteBatch, previewBox, _fade * dim);
+			ChatManager.DrawColorCodedStringWithShadow(
+				spriteBatch, FontAssets.MouseText.Value, title,
+				new Vector2(previewBox.Right + 14, hit.Y + hit.Height * 0.5f - 10f),
+				(on ? Color.White : new Color(168, 172, 180)) * _fade, 0f, Vector2.Zero, new Vector2(0.84f));
+			y += WidgetTileStep;
+		}
+
+		private static bool ClickWidgetTile(Rectangle panel, ref int y)
+		{
+			Rectangle hit = Row(panel, y, WidgetTileH);
+			y += WidgetTileStep;
+			return hit.Contains(Main.mouseX, Main.mouseY);
+		}
+
+		private static void DrawDiscordStyle(SpriteBatch spriteBatch, Rectangle panel, ref int y, int style)
+		{
+			Rectangle hit = Row(panel, y, DiscordStyleH);
+			bool on = WeSave.Data.DiscordStyle == style;
+			bool hover = hit.Contains(Main.mouseX, Main.mouseY);
+			Color fill = on ? WeAccent.Deep : new Color(22, 24, 30);
+			Color border = on || hover ? WeAccent.Light : new Color(72, 76, 84);
+			WeDraw.Fill(spriteBatch, hit, fill * ((hover ? 0.96f : on ? 0.88f : 0.78f) * _fade));
+			WeDraw.Border(spriteBatch, hit, border * _fade);
+			var preview = new Rectangle(hit.X + 8, hit.Y + 6, hit.Width - 16, 54);
+			WeDraw.Fill(spriteBatch, preview, new Color(14, 16, 20) * _fade);
+			DiscordWidget.DrawPreview(spriteBatch, preview, _fade * (on ? 1f : 0.45f), style);
+			string key = style == 1 ? "DiscordStyleBanner" : style == 2 ? "DiscordStyleRoster" : "DiscordStyleCompact";
+			ChatManager.DrawColorCodedStringWithShadow(
+				spriteBatch, FontAssets.MouseText.Value, WeText.UI(key),
+				new Vector2(hit.X + 12, hit.Bottom - 24),
+				(on ? Color.White : new Color(168, 172, 180)) * _fade, 0f, Vector2.Zero, new Vector2(0.76f));
+			y += DiscordStyleStep;
+		}
+
+		private static bool ClickDiscordStyle(Rectangle panel, ref int y)
+		{
+			Rectangle hit = Row(panel, y, DiscordStyleH);
+			y += DiscordStyleStep;
 			return hit.Contains(Main.mouseX, Main.mouseY);
 		}
 
@@ -1014,7 +1072,8 @@ namespace WallpaperEngine.UI
 		{
 			float extra = WeSave.Data.Layers.Count * 42f + WeSave.Data.Wallpapers.Count * 58f + WeSave.Data.Logos.Count * 58f +
 			              WeSave.Data.Tracks.Count * 42f + WeCatalog.Skies.Count * 62f + WeCatalog.Logos.Count * 62f;
-			return 720f + extra;
+			float floor = _id == WePanelId.Widgets ? 1100f : 720f;
+			return floor + extra;
 		}
 	}
 }

@@ -107,6 +107,22 @@ namespace WallpaperEngine.Widgets
 			});
 		}
 
+		internal static void DrawPreview(SpriteBatch spriteBatch, Rectangle box, float fade)
+		{
+			if (fade <= 0.02f || box.Width < 8 || box.Height < 8)
+				return;
+
+			string greeting = Greeting();
+			var font = FontAssets.DeathText.Value;
+			Vector2 size = font.MeasureString(greeting);
+			float scale = Math.Min((box.Width - 16f) / Math.Max(1f, size.X), (box.Height - 12f) / Math.Max(1f, size.Y));
+			scale = Math.Min(scale, 0.36f);
+			Vector2 pos = box.Center.ToVector2() - size * scale * 0.5f;
+			ChatManager.DrawColorCodedStringWithShadow(
+				spriteBatch, font, greeting, pos,
+				WeAccent.Light * fade, 0f, Vector2.Zero, new Vector2(scale));
+		}
+
 		private static Vector2 Measure()
 		{
 			string greeting = Greeting();

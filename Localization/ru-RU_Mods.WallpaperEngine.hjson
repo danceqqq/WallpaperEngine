@@ -93,6 +93,8 @@ UI: {
 	DiscordStyleRoster: Список участников
 	DiscordJoin: В голос
 	DiscordOnline: %n в сети
+	DiscordInVoice: %n в голосе
+	DiscordNeedWidgetShort: Включи виджет сервера
 	DiscordLoading: Ищем сервер…
 	DiscordNeedWidget: Включи виджет сервера в Discord (Настройки сервера → Виджет)
 	DiscordBadId: Такой ID не найден

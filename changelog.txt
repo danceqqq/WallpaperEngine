@@ -1,7 +1,8 @@
 v0.6
 - Borrowed Catalyst logos use Terraria's own logo bounce (rotation + scale) instead of sitting still
 - Wrath of the Gods "The Insouciant" wallpaper draws the live carmine rift sky (not vanilla night). Scoped menu swap is restored every frame
-- Discord server widget: click to add, paste the server ID in-game (no discord.txt). Compact / banner / member-list styles. Gear on the live widget reopens the ID field. Public widget JSON only — enable Server Widget in Discord
+- Discord server widget: paste the server ID in-game (no discord.txt). Compact / banner / member-list styles. Live panel previews (dim when off). No gear on the live card — ID and styles live in the widgets panel. Refreshes about every 15s (8s if Discord still hasn't published the widget). Server icon comes from the widget invite. Voice members sort first; the roster scrolls. Join Voice opens the Discord app when it's installed
+- Public widget JSON only — enable Server Widget in Discord
 
 v0.5
 - Client settings can switch the customize hub between the circle and a sliding iOS-style bar (live previews in the panel)

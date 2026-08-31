@@ -93,6 +93,8 @@ UI: {
 	DiscordStyleRoster: Member list
 	DiscordJoin: Join Voice
 	DiscordOnline: %n online
+	DiscordInVoice: %n in voice
+	DiscordNeedWidgetShort: Enable Server Widget
 	DiscordLoading: Looking up the server…
 	DiscordNeedWidget: Turn on Server Widget in Discord (Server Settings → Widget)
 	DiscordBadId: That ID wasn't found
