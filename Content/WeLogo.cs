@@ -33,6 +33,8 @@ namespace WallpaperEngine.Content
 		{
 			if (WeSave.Data.Logo == LogoKind.Hidden)
 				return null;
+			if (WeSave.Data.Logo == LogoKind.Preset)
+				return WePresetLogos.BaseOf(WeSave.Data.LogoId);
 			if (WeSave.Data.Logo == LogoKind.Custom && WeArt.TryGetLogo(out Texture2D custom))
 				return custom;
 			if (WeSave.Data.Logo == LogoKind.Borrowed)
@@ -54,6 +56,9 @@ namespace WallpaperEngine.Content
 				return;
 
 			bounce = MathHelper.Clamp(bounce, 0.5f, 1.6f);
+			if (WeSave.Data.Logo == LogoKind.Preset && WePresetLogos.Draw(spriteBatch, fade, rotation, bounce))
+				return;
+
 			if (WeSave.Data.Logo == LogoKind.Borrowed &&
 			    WeBorrow.TryDrawLogo(spriteBatch, Anchor, Scale, fade, rotation, bounce))
 				return;
@@ -79,7 +84,7 @@ namespace WallpaperEngine.Content
 		{
 			if (!SceneGraph.Visible(SceneGraph.Logo) || WeSave.Data.Logo == LogoKind.Hidden)
 				return false;
-			if (WeSave.Data.Logo is LogoKind.Custom or LogoKind.Borrowed)
+			if (WeSave.Data.Logo is LogoKind.Custom or LogoKind.Borrowed or LogoKind.Preset)
 				return false;
 
 			logoDrawCenter = Anchor;

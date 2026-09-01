@@ -188,7 +188,7 @@ namespace WallpaperEngine.Grab
 			if (tex == null || tex.IsDisposed)
 				return false;
 
-			Rectangle cover = WeDraw.CoverRect;
+			Rectangle cover = WeDraw.UiRect;
 			float scale = cover.Width / (float)Math.Max(1, tex.Width);
 			int w = Math.Max(1, (int)(tex.Width * scale));
 			int h = Math.Max(1, (int)(tex.Height * scale));

@@ -39,6 +39,7 @@ namespace WallpaperEngine.Content
 			WePlayerUI.Unload();
 			DiscordFeed.Unload();
 			WePlaylist.Unload();
+			WePresetLogos.Unload();
 			WeDraw.Unload();
 			ClientChrome.Unload();
 		}
@@ -75,6 +76,9 @@ namespace WallpaperEngine.Content
 
 		private static void DrawMenuHook(On_Main.orig_DrawMenu orig, Main self, GameTime time)
 		{
+			if (Main.gameMenu && WeModMenu.IsActive)
+				WePlaylist.Update();
+
 			bool steal = false;
 			bool releaseAfterInput = Main.mouseLeftRelease;
 			int savedMouseY = Main.mouseY;

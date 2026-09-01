@@ -236,8 +236,10 @@ namespace WallpaperEngine.UI
 			WeLayerRecord selected = WeSettings.SelectedLayer();
 			if (selected != null) {
 				DrawCard(spriteBatch, panel, ref y, WeText.UI("LayerForeground"), selected.Foreground);
-				if (selected.Kind == WeLayerKind.Image)
+				if (selected.Kind == WeLayerKind.Image) {
 					DrawCard(spriteBatch, panel, ref y, WeText.UI(FitKey(selected.Fit)), true);
+					DrawCard(spriteBatch, panel, ref y, WeText.UI("CenterImage"), false);
+				}
 				else
 					DrawCard(spriteBatch, panel, ref y, WeText.UI(FxKey(selected.Effect)), true);
 				DrawSlider(spriteBatch, panel, ref y, "lop", selected.Opacity, WeText.UI("LayerOpacity"));
@@ -303,6 +305,8 @@ namespace WallpaperEngine.UI
 				if (selected.Kind == WeLayerKind.Image) {
 					if (ClickCard(panel, ref y))
 						WeSettings.CycleSelectedFit();
+					if (ClickCard(panel, ref y))
+						WeSettings.CenterWallpaperPan();
 				}
 				else if (ClickCard(panel, ref y))
 					WeSettings.CycleSelectedEffect();
@@ -334,9 +338,11 @@ namespace WallpaperEngine.UI
 			DrawHint(spriteBatch, panel, ref y, WeText.UI("BorrowMix"));
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("VanillaLogo"), WeSave.Data.Logo == LogoKind.Vanilla);
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("HideLogo"), WeSave.Data.Logo == LogoKind.Hidden);
+			foreach (string id in WePresetLogos.Ids)
+				DrawPresetCard(spriteBatch, panel, ref y, id);
 			DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("ImportImage"), WeText.UI("OpenFolder"));
 			foreach (WeArtRecord record in WeSave.Data.Logos)
-				DrawArtCard(spriteBatch, panel, ref y, record, WeSave.Data.LogoId == record.Id, logo: true);
+				DrawArtCard(spriteBatch, panel, ref y, record, WeSave.Data.Logo == LogoKind.Custom && WeSave.Data.LogoId == record.Id, logo: true);
 
 			DrawBorrowSection(spriteBatch, panel, ref y, WeCatalog.Logos, WeOfferKind.Logo);
 		}
@@ -348,6 +354,12 @@ namespace WallpaperEngine.UI
 				WeSettings.SetLogo(LogoKind.Vanilla);
 			if (ClickCard(panel, ref y))
 				WeSettings.SetLogo(LogoKind.Hidden);
+			foreach (string id in WePresetLogos.Ids) {
+				if (!ClickBorrow(panel, ref y))
+					continue;
+				WeSettings.SetLogo(LogoKind.Preset, id);
+				WeToast.Show("ToastLogo");
+			}
 			if (ClickRow(panel, ref y, out int which)) {
 				if (which == 0)
 					WeArt.TryImportLogo();
@@ -937,6 +949,43 @@ namespace WallpaperEngine.UI
 			return WeSave.Data.Wallpaper == WallpaperKind.Borrowed && WeSave.Data.WallpaperId == offer.Id;
 		}
 
+		private static void DrawPresetCard(SpriteBatch spriteBatch, Rectangle panel, ref int y, string id)
+		{
+			Rectangle hit = Row(panel, y, 56);
+			bool on = WeSave.Data.Logo == LogoKind.Preset && WeSave.Data.LogoId == id;
+			bool hover = hit.Contains(Main.mouseX, Main.mouseY);
+			WeDraw.Fill(spriteBatch, hit, (on ? WeAccent.Deep : new Color(28, 30, 38)) * ((hover ? 0.95f : 0.8f) * _fade));
+			WeDraw.Border(spriteBatch, hit, (on || hover ? WeAccent.Light : WeAccent.Mid) * _fade);
+
+			var badge = new Rectangle(hit.X + 8, hit.Y + 14, 28, 28);
+			Texture2D icon = WePresetLogos.PackIcon();
+			if (icon != null) {
+				float scale = Math.Min(badge.Width / (float)icon.Width, badge.Height / (float)icon.Height);
+				spriteBatch.Draw(icon, badge.Center.ToVector2(), null, Color.White * _fade, 0f, icon.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+			}
+			else {
+				WeDraw.Fill(spriteBatch, badge, WeAccent.Deep * _fade);
+				WeDraw.Border(spriteBatch, badge, WeAccent.Mid * _fade);
+			}
+
+			Texture2D preview = WePresetLogos.PreviewOf(id);
+			var thumb = new Rectangle(hit.X + 44, hit.Y + 8, 72, 40);
+			WeDraw.Fill(spriteBatch, thumb, Color.Black * (0.35f * _fade));
+			if (preview != null) {
+				float scale = Math.Min(thumb.Width / (float)preview.Width, thumb.Height / (float)preview.Height);
+				spriteBatch.Draw(preview, thumb.Center.ToVector2(), null, Color.White * _fade, 0f, preview.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+			}
+
+			ChatManager.DrawColorCodedStringWithShadow(
+				spriteBatch, FontAssets.MouseText.Value, WeText.UI(WePresetLogos.TitleKey(id)),
+				new Vector2(hit.X + 126, hit.Y + 8), Color.White * _fade, 0f, Vector2.Zero, new Vector2(0.75f));
+			ChatManager.DrawColorCodedStringWithShadow(
+				spriteBatch, FontAssets.MouseText.Value,
+				WeText.UI("LogoFromPack") + "  ·  " + WeText.UI("BorrowKindLogo"),
+				new Vector2(hit.X + 126, hit.Y + 28), Color.White * (0.62f * _fade), 0f, Vector2.Zero, new Vector2(0.68f));
+			y += 62;
+		}
+
 		private static void DrawBorrowCard(SpriteBatch spriteBatch, Rectangle panel, ref int y, WeOffer offer, bool on)
 		{
 			Rectangle hit = Row(panel, y, 56);
@@ -1243,7 +1292,9 @@ namespace WallpaperEngine.UI
 			}
 
 			float extra = WeSave.Data.Layers.Count * 42f + WeSave.Data.Wallpapers.Count * 58f + WeSave.Data.Logos.Count * 58f +
-			              WeSave.Data.Tracks.Count * 42f + WeCatalog.Skies.Count * 62f + WeCatalog.Logos.Count * 62f;
+			              WeSave.Data.Tracks.Count * 42f + WeCatalog.Skies.Count * 62f + WeCatalog.Logos.Count * 62f +
+			              (_id == WePanelId.Logo ? WePresetLogos.Ids.Length * 62f : 0f) +
+			              (_id == WePanelId.Wallpaper ? 42f : 0f);
 			return 720f + extra;
 		}
 	}

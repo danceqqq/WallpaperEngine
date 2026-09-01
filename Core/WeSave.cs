@@ -20,7 +20,8 @@ namespace WallpaperEngine.Core
 		Vanilla = 0,
 		Hidden = 1,
 		Custom = 2,
-		Borrowed = 3
+		Borrowed = 3,
+		Preset = 4
 	}
 
 	internal enum MusicKind
@@ -242,9 +243,11 @@ namespace WallpaperEngine.Core
 				_data.WallpaperFit = WallpaperFit.Cover;
 			if ((int)_data.Wallpaper < 0 || (int)_data.Wallpaper > 4)
 				_data.Wallpaper = WallpaperKind.Vanilla;
-			if ((int)_data.Logo < 0 || (int)_data.Logo > 3)
+			if ((int)_data.Logo < 0 || (int)_data.Logo > 4)
 				_data.Logo = LogoKind.Vanilla;
 			if (_data.Logo == LogoKind.Borrowed && string.IsNullOrEmpty(_data.LogoId))
+				_data.Logo = LogoKind.Vanilla;
+			if (_data.Logo == LogoKind.Preset && string.IsNullOrEmpty(_data.LogoId))
 				_data.Logo = LogoKind.Vanilla;
 			if (_data.Wallpaper == WallpaperKind.Borrowed && string.IsNullOrEmpty(_data.WallpaperId))
 				_data.Wallpaper = WallpaperKind.Vanilla;

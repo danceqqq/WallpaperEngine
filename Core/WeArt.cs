@@ -19,7 +19,7 @@ namespace WallpaperEngine.Core
 			WeSave.EnsureFolders();
 			SyncFolder(WeSave.LogoFolder, WeSave.Data.Logos, "logo:");
 			SyncFolder(WeSave.WallpaperFolder, WeSave.Data.Wallpapers, "wall:");
-			if (WeSave.Data.Logo != LogoKind.Borrowed &&
+			if (WeSave.Data.Logo == LogoKind.Custom &&
 			    !string.IsNullOrEmpty(WeSave.Data.LogoId) &&
 			    WeSave.Data.Logos.All(item => item.Id != WeSave.Data.LogoId))
 				WeSave.Data.LogoId = "";
@@ -195,7 +195,9 @@ namespace WallpaperEngine.Core
 				File.Copy(source, dest, overwrite: false);
 				var record = new WeArtRecord {
 					Id = prefix + Path.GetFileNameWithoutExtension(dest).ToLowerInvariant(),
-					FileName = Path.GetFileName(dest)
+					FileName = Path.GetFileName(dest),
+					PanX = 0.5f,
+					PanY = 0.5f
 				};
 				records.RemoveAll(item => string.Equals(item.FileName, record.FileName, StringComparison.OrdinalIgnoreCase));
 				records.Add(record);

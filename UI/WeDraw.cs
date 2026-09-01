@@ -18,6 +18,18 @@ namespace WallpaperEngine.UI
 		private static Texture2D _circle;
 		internal static Rectangle? Scissor { get; private set; }
 
+		internal static Point UiSize =>
+			new(Math.Max(1, Main.screenWidth), Math.Max(1, Main.screenHeight));
+
+		internal static Rectangle UiRect
+		{
+			get
+			{
+				Point size = UiSize;
+				return new Rectangle(0, 0, size.X, size.Y);
+			}
+		}
+
 		internal static Point CoverSize
 		{
 			get
@@ -78,7 +90,7 @@ namespace WallpaperEngine.UI
 
 		internal static Rectangle CoverDestination(Texture2D tex, Vector2 pan, float overdraw = 1.02f)
 		{
-			Point cover = CoverSize;
+			Point cover = UiSize;
 			float scale = Math.Max(
 				cover.X / (float)Math.Max(1, tex.Width),
 				cover.Y / (float)Math.Max(1, tex.Height)) * overdraw;
@@ -91,20 +103,24 @@ namespace WallpaperEngine.UI
 			return new Rectangle((int)(-extraX * pan.X), (int)(-extraY * pan.Y), w, h);
 		}
 
-		internal static Rectangle ContainDestination(Texture2D tex)
+		internal static Rectangle ContainDestination(Texture2D tex, Vector2 pan)
 		{
-			Point cover = CoverSize;
+			Point cover = UiSize;
 			float scale = Math.Min(
 				cover.X / (float)Math.Max(1, tex.Width),
 				cover.Y / (float)Math.Max(1, tex.Height));
 			int w = Math.Max(1, (int)(tex.Width * scale));
 			int h = Math.Max(1, (int)(tex.Height * scale));
-			return new Rectangle((cover.X - w) / 2, (cover.Y - h) / 2, w, h);
+			pan.X = MathHelper.Clamp(pan.X, 0f, 1f);
+			pan.Y = MathHelper.Clamp(pan.Y, 0f, 1f);
+			int leftoverX = cover.X - w;
+			int leftoverY = cover.Y - h;
+			return new Rectangle((int)(leftoverX * pan.X), (int)(leftoverY * pan.Y), w, h);
 		}
 
 		internal static Rectangle ImageDestination(Texture2D tex, Vector2 pan, WallpaperFit fit) => fit switch {
-			WallpaperFit.Contain => ContainDestination(tex),
-			WallpaperFit.Stretch => CoverRect,
+			WallpaperFit.Contain => ContainDestination(tex, pan),
+			WallpaperFit.Stretch => UiRect,
 			_ => CoverDestination(tex, pan)
 		};
 

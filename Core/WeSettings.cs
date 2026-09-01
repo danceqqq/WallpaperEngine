@@ -191,6 +191,8 @@ namespace WallpaperEngine.Core
 				AddImageLayer(artId);
 			else {
 				layer.ArtId = artId;
+				layer.PanX = 0.5f;
+				layer.PanY = 0.5f;
 				if (Current.Wallpaper is WallpaperKind.Vanilla or WallpaperKind.Image) {
 					Current.Wallpaper = WallpaperKind.Image;
 					Current.WallpaperId = artId;
@@ -221,6 +223,8 @@ namespace WallpaperEngine.Core
 			WeLayerRecord selected = SelectedLayer();
 			if (selected is { Kind: WeLayerKind.Image }) {
 				selected.ArtId = id ?? "";
+				selected.PanX = 0.5f;
+				selected.PanY = 0.5f;
 				Current.SelectedLayerId = selected.Id;
 				return;
 			}
@@ -266,8 +270,13 @@ namespace WallpaperEngine.Core
 		internal static void SetLogo(LogoKind kind, string id = "")
 		{
 			Current.Logo = kind;
-			Current.LogoId = kind is LogoKind.Custom or LogoKind.Borrowed ? id ?? "" : "";
+			Current.LogoId = kind is LogoKind.Custom or LogoKind.Borrowed or LogoKind.Preset ? id ?? "" : "";
 			WeSave.Save();
+		}
+
+		internal static void CenterWallpaperPan()
+		{
+			SaveWallpaperPan(new Vector2(0.5f, 0.5f));
 		}
 
 		private static bool IsLocalImage(string artId) =>

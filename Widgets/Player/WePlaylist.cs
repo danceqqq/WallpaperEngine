@@ -33,8 +33,6 @@ namespace WallpaperEngine.Audio
 		private static uint _lifeFrame = uint.MaxValue;
 		private static readonly List<int> ShuffleHistory = new();
 		private static bool _menuAudioStarted;
-		private static bool _pendingStart;
-		private static bool _returnFromWorld;
 		private static int _customRetryDelay;
 		private static int _customPlayFails;
 		private static string _customFailId = "";
@@ -117,17 +115,13 @@ namespace WallpaperEngine.Audio
 				return;
 			}
 
-			if (WePersist.MenuStillLoading) {
-				_pendingStart = true;
+			if (WePersist.MenuStillLoading)
 				return;
-			}
 
 			if (_menuAudioStarted)
 				return;
 
 			StartPlayback();
-			_returnFromWorld = false;
-			_pendingStart = false;
 			_menuAudioStarted = true;
 		}
 
@@ -145,7 +139,6 @@ namespace WallpaperEngine.Audio
 			if (!Main.gameMenu) {
 				if (_lifeFrame != Main.GameUpdateCount) {
 					_lifeFrame = Main.GameUpdateCount;
-					_pendingStart = false;
 					_menuAudioStarted = false;
 					TickMix(0f, 0.01f);
 					WeCustomAudio.Update();
@@ -153,40 +146,40 @@ namespace WallpaperEngine.Audio
 						WeCustomAudio.Stop();
 				}
 
-				_returnFromWorld = true;
 				return;
 			}
 
 			if (WePersist.MenuStillLoading) {
-				_pendingStart = true;
+				if (WeCustomAudio.HasOutput)
+					Update();
 				return;
 			}
 
-			if (!_menuAudioStarted && WeSave.Data.Music == MusicKind.Custom && (_returnFromWorld || _pendingStart)) {
-				_returnFromWorld = false;
-				_pendingStart = false;
+			bool ours = WeModMenu.IsActive || WeSave.Data.KeepMenuSelected;
+			if (!ours)
+				return;
+
+			if (!_menuAudioStarted && WeSave.Data.Music == MusicKind.Custom && Active.Count > 0) {
 				StartPlayback();
 				_menuAudioStarted = true;
 			}
 
-			if (_lifeFrame == Main.GameUpdateCount)
-				return;
-
-			_lifeFrame = Main.GameUpdateCount;
-			if (WeSave.Data.Music == MusicKind.Custom && !_paused)
-				WeCustomAudio.Update();
+			Update();
 		}
 
 		internal static void Update()
 		{
 			if (WeSave.Data.Music != MusicKind.Custom || Active.Count == 0) {
-				if (WeSave.Data.Music != MusicKind.Vanilla)
+				if (WeModMenu.IsActive && WeSave.Data.Music != MusicKind.Vanilla)
 					MuteVanilla();
 				return;
 			}
 
-			Main.newMusic = 0;
-			MuteVanilla();
+			if (WeModMenu.IsActive) {
+				Main.newMusic = 0;
+				MuteVanilla();
+			}
+
 			TickMix(1f, 0.01f);
 			WeCustomAudio.Update();
 			if (_paused)
@@ -361,6 +354,8 @@ namespace WallpaperEngine.Audio
 			if (played) {
 				_customPlayFails = 0;
 				_customFailId = "";
+				_mix = 1f;
+				_paused = false;
 				return true;
 			}
 

@@ -33,6 +33,11 @@ namespace WallpaperEngine.Content
 				_restoreCooldown = 30;
 		}
 
+		public override void PreUpdatePlayers()
+		{
+			WePlaylist.HandleMenuLifecycle();
+		}
+
 		public override void UpdateUI(Microsoft.Xna.Framework.GameTime gameTime)
 		{
 			WePlaylist.HandleMenuLifecycle();

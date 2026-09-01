@@ -1,6 +1,6 @@
 displayName = Wallpaper Engine
 author = myangell
-version = 0.8
+version = 0.8.1
 side = Client
 dllReferences = NLayer
 buildIgnore = *.csproj, *.sln, *.user, obj\, bin\, .vs\, .git\, SvgIcon\, photo\, *.gif

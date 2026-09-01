@@ -57,6 +57,7 @@ namespace WallpaperEngine.Content
 		{
 			_empty = ModContent.Request<Texture2D>("WallpaperEngine/Assets/Textures/UI/empty");
 			WeIcons.Load();
+			WePresetLogos.Load();
 			WePlaylist.Load(Mod);
 			WeSpectrum.Load();
 		}
@@ -78,6 +79,13 @@ namespace WallpaperEngine.Content
 
 		public override void OnDeselected()
 		{
+			if (Main.gameMenu && Main.menuMode != 0) {
+				LayoutEditor.Cancel(false);
+				WePanels.Close();
+				WeSplash.Hide();
+				return;
+			}
+
 			WePersist.OnDeselected();
 			WePlaylist.Silence();
 			LayoutEditor.Cancel(false);
@@ -112,7 +120,7 @@ namespace WallpaperEngine.Content
 			Tick();
 			WeBackgroundStyle.Draw(spriteBatch);
 			WeBackgroundStyle.DrawAtmosphere(spriteBatch);
-			if (WeSave.Data.Logo is LogoKind.Custom or LogoKind.Hidden or LogoKind.Borrowed || SceneGraph.Get(SceneGraph.Logo).Customized)
+			if (WeSave.Data.Logo is LogoKind.Custom or LogoKind.Hidden or LogoKind.Borrowed or LogoKind.Preset || SceneGraph.Get(SceneGraph.Logo).Customized)
 			{
 				if (WeSave.Data.Logo != LogoKind.Hidden && SceneGraph.Visible(SceneGraph.Logo))
 					WeLogo.DrawCustom(spriteBatch, 1f, logoRotation, logoScale);

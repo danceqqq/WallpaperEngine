@@ -383,14 +383,25 @@ namespace WallpaperEngine.Layout
 				return;
 			}
 
-			if (WeArt.TryGetWallpaper(out Texture2D tex) && (WeSettings.SelectedLayer()?.Fit ?? WeSave.Data.WallpaperFit) == WallpaperFit.Cover) {
-				Rectangle dest = WeDraw.CoverDestination(tex, _workPan);
-				float extraX = Math.Max(1, dest.Width - Main.screenWidth);
-				float extraY = Math.Max(1, dest.Height - Main.screenHeight);
+			if (WeArt.TryGetWallpaper(out Texture2D tex)) {
+				WallpaperFit fit = WeSettings.SelectedLayer()?.Fit ?? WeSave.Data.WallpaperFit;
 				Vector2 mouse = new(Main.mouseX, Main.mouseY);
 				Vector2 delta = mouse - _lastMouse;
-				_workPan.X = MathHelper.Clamp(_workPan.X - delta.X / extraX, 0f, 1f);
-				_workPan.Y = MathHelper.Clamp(_workPan.Y - delta.Y / extraY, 0f, 1f);
+				if (fit == WallpaperFit.Cover) {
+					Rectangle dest = WeDraw.CoverDestination(tex, _workPan);
+					float extraX = Math.Max(1, dest.Width - Main.screenWidth);
+					float extraY = Math.Max(1, dest.Height - Main.screenHeight);
+					_workPan.X = MathHelper.Clamp(_workPan.X - delta.X / extraX, 0f, 1f);
+					_workPan.Y = MathHelper.Clamp(_workPan.Y - delta.Y / extraY, 0f, 1f);
+				}
+				else if (fit == WallpaperFit.Contain) {
+					Rectangle dest = WeDraw.ContainDestination(tex, new Vector2(0.5f, 0.5f));
+					float leftoverX = Math.Max(1, Main.screenWidth - dest.Width);
+					float leftoverY = Math.Max(1, Main.screenHeight - dest.Height);
+					_workPan.X = MathHelper.Clamp(_workPan.X - delta.X / leftoverX, 0f, 1f);
+					_workPan.Y = MathHelper.Clamp(_workPan.Y - delta.Y / leftoverY, 0f, 1f);
+				}
+
 				_lastMouse = mouse;
 			}
 
