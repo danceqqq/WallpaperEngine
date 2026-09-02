@@ -234,6 +234,8 @@ namespace WallpaperEngine.Core
 				Texture2D live = WeAnim.Play(path, write);
 				if (live != null)
 					return live;
+				if (WeAnim.Loaded(path))
+					return null;
 			}
 
 			if (Cache.TryGetValue(path, out Texture2D cached) && cached != null && !cached.IsDisposed &&

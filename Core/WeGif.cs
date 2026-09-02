@@ -240,7 +240,7 @@ namespace WallpaperEngine.Core
 			return pos > 0;
 		}
 
-		private struct Cursor
+		private class Cursor
 		{
 			private readonly byte[] _d;
 			private int _p;

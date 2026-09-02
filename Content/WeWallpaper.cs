@@ -22,7 +22,7 @@ namespace WallpaperEngine.Content
 						continue;
 					DrawLayer(spriteBatch, layer);
 				}
-			}, WeAnim.AdvanceActive);
+			}, WeAnim.Pulse);
 		}
 
 		internal static void DrawFore(SpriteBatch spriteBatch)
@@ -42,7 +42,7 @@ namespace WallpaperEngine.Content
 						continue;
 					DrawLayer(spriteBatch, layer);
 				}
-			}, WeAnim.AdvanceActive);
+			}, WeAnim.Pulse);
 		}
 
 		private static void DrawBackplate(SpriteBatch spriteBatch)

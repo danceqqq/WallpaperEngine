@@ -66,7 +66,14 @@ UI: {
 	FxRain: Дождь
 	FxBeat: Пульс под музыку
 	ImportImage: Импорт картинки
-	AnimHint: GIF и анимированный PNG играют в меню. В списке — первый кадр.
+	AnimHint: GIF играют в меню. Нажми файл — поставить, ПКМ — удалить.
+	SectionSky: Небо
+	SectionLayers: Слои
+	SectionImages: Твои картинки
+	EmptyLayers: Импортируй картинку или добавь слой.
+	SkyVanilla: Ваниль
+	SkyColor: Цвет
+	SkyGradient: Градиент
 	OpenFolder: Открыть папку
 	VanillaLogo: Лого tModLoader
 	HideLogo: Скрыть лого

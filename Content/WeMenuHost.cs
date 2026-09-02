@@ -86,6 +86,7 @@ namespace WallpaperEngine.Content
 			bool remapY = false;
 
 			if (WeModMenu.OnTitle) {
+				WeAnim.Pulse();
 				HandleInput();
 				releaseAfterInput = Main.mouseLeftRelease;
 				steal = WeSplash.Visible || WePanels.IsOpen || WePanels.AteInput || WrenchToolbar.Busy || LayoutEditor.Busy || WidgetHost.Busy;

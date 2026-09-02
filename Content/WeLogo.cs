@@ -81,7 +81,7 @@ namespace WallpaperEngine.Content
 					return;
 				float scale = DrawScale(tex) * bounce;
 				spriteBatch.Draw(tex, Anchor, null, Color.White * fade, rotation, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
-			}, WeSave.Data.Logo == LogoKind.Custom ? WeAnim.AdvanceActive : null);
+			}, WeSave.Data.Logo == LogoKind.Custom ? WeAnim.Pulse : null);
 		}
 
 		internal static bool ShouldDrawVanilla(ref Vector2 logoDrawCenter, ref float logoScale)

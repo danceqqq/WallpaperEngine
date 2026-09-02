@@ -82,7 +82,7 @@ namespace WallpaperEngine.Widgets
 			Http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
 			Http.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true, NoStore = true };
 			Http.DefaultRequestHeaders.Pragma.ParseAdd("no-cache");
-			Http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WallpaperEngine-tModLoader/0.8.5");
+			Http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WallpaperEngine-tModLoader/0.8.7");
 			Http.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
 		}
 

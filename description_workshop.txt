@@ -22,6 +22,8 @@ Don't dump other mods' crashes in the comments. I can't fix Calamity for you.
 Client-side.
 
 [h2]Changelog[/h2]
+[b]0.8.7[/b] GIFs decode now. The palette reader was walking a copy of the file, so every GIF looked like a still. No extra DLLs.
+[b]0.8.6[/b] GIFs play for real this time. Wallpaper panel is grouped (sky / layers / files). Delete is the trash on the layer — the old Remove button was hitting the file list.
 [b]0.8.5[/b] GIFs actually play. Remove layer works (it was putting the image back on the same click).
 [b]0.8.4[/b] GIF and animated PNG work as wallpapers / logos / layers. Gordo asked.
 [b]0.8.3[/b] Client settings are cards now, with previews. You can import fonts for the menu buttons (width, height, outlines / plates still apply).

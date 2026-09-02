@@ -25,59 +25,28 @@ namespace WallpaperEngine.Core
 		internal int Height;
 		internal DateTime Write;
 		internal WeAnimFrame[] Frames;
-		internal Color[][] Baked;
-		internal Texture2D Gpu;
 
+		private Texture2D[] _gpu;
+		private Color[][] _baked;
 		private Color[] _canvas;
 		private Color[] _backup;
 		private int[] _delays;
-		private int _shown = -1;
 
 		internal Texture2D Current()
 		{
-			if (Gpu == null || Gpu.IsDisposed)
+			if (_gpu == null || _gpu.Length < 2)
 				return null;
-			return Gpu;
+			int want = IndexAt(Tick());
+			want = Math.Clamp(want, 0, _gpu.Length - 1);
+			Texture2D tex = _gpu[want];
+			return tex != null && !tex.IsDisposed ? tex : null;
 		}
 
 		internal void Present()
 		{
+			KeepDelays();
 			Bake();
-			KeepDelays();
-			EnsureGpu();
-			if (Gpu == null || Baked == null || Baked.Length == 0)
-				return;
-
-			int n = Baked.Length;
-			int want = n == 1 ? 0 : IndexAt(Tick());
-			want = Math.Clamp(want, 0, n - 1);
-			if (want == _shown)
-				return;
-
-			try {
-				Gpu.SetData(Baked[want]);
-				_shown = want;
-			}
-			catch {
-			}
-		}
-
-		internal void Bake()
-		{
-			if (Baked != null || Frames == null || Frames.Length == 0 || Width < 1 || Height < 1)
-				return;
-
-			KeepDelays();
-			_canvas = new Color[Width * Height];
-			Baked = new Color[Frames.Length][];
-			for (int i = 0; i < Frames.Length; i++) {
-				Paint(i);
-				Baked[i] = (Color[])_canvas.Clone();
-			}
-
-			_canvas = null;
-			_backup = null;
-			Frames = null;
+			Upload();
 		}
 
 		internal void KeepDelays()
@@ -89,19 +58,52 @@ namespace WallpaperEngine.Core
 				_delays[i] = Math.Max(20, Frames[i].DelayMs);
 		}
 
-		private void EnsureGpu()
+		private void Bake()
 		{
-			if (Gpu != null && !Gpu.IsDisposed)
+			if (_baked != null || Frames == null || Frames.Length < 2 || Width < 1 || Height < 1)
+				return;
+			_canvas = new Color[Width * Height];
+			_baked = new Color[Frames.Length][];
+			for (int i = 0; i < Frames.Length; i++) {
+				Paint(i);
+				_baked[i] = (Color[])_canvas.Clone();
+			}
+
+			_canvas = null;
+			_backup = null;
+			Frames = null;
+		}
+
+		private void Upload()
+		{
+			if (_gpu != null || _baked == null || _baked.Length < 2 || !WeAnim.CanUpload)
 				return;
 			GraphicsDevice device = Main.instance?.GraphicsDevice ?? Main.graphics?.GraphicsDevice;
-			if (device == null || Width < 1 || Height < 1)
+			if (device == null)
 				return;
+			Unbind(device);
+			_gpu = new Texture2D[_baked.Length];
 			try {
-				Gpu = new Texture2D(device, Width, Height);
-				_shown = -1;
+				for (int i = 0; i < _baked.Length; i++) {
+					var tex = new Texture2D(device, Width, Height, false, SurfaceFormat.Color);
+					tex.SetData(_baked[i]);
+					_gpu[i] = tex;
+				}
 			}
 			catch {
-				Gpu = null;
+				DisposeGpu();
+			}
+		}
+
+		private static void Unbind(GraphicsDevice device)
+		{
+			if (device == null)
+				return;
+			try {
+				for (int i = 0; i < 16; i++)
+					device.Textures[i] = null;
+			}
+			catch {
 			}
 		}
 
@@ -188,7 +190,7 @@ namespace WallpaperEngine.Core
 
 		private int IndexAt(long nowMs)
 		{
-			int n = Baked?.Length ?? Frames?.Length ?? _delays?.Length ?? 0;
+			int n = _gpu?.Length ?? _baked?.Length ?? Frames?.Length ?? _delays?.Length ?? 0;
 			if (n < 2)
 				return 0;
 			int total = 0;
@@ -228,14 +230,21 @@ namespace WallpaperEngine.Core
 
 		internal void Dispose()
 		{
-			DisposeTex(Gpu);
-			Gpu = null;
-			Baked = null;
+			DisposeGpu();
 			Frames = null;
+			_baked = null;
 			_delays = null;
 			_canvas = null;
 			_backup = null;
-			_shown = -1;
+		}
+
+		private void DisposeGpu()
+		{
+			if (_gpu == null)
+				return;
+			foreach (Texture2D tex in _gpu)
+				DisposeTex(tex);
+			_gpu = null;
 		}
 
 		internal static void DisposeTex(Texture2D tex)
@@ -262,6 +271,8 @@ namespace WallpaperEngine.Core
 		private static readonly Dictionary<string, WeClip> Clips = new(StringComparer.OrdinalIgnoreCase);
 		private static readonly Dictionary<string, DateTime> KnownStill = new(StringComparer.OrdinalIgnoreCase);
 
+		internal static bool CanUpload;
+
 		internal static bool Fits(int w, int h, int frames) =>
 			w >= 1 && h >= 1 && w <= MaxSide && h <= MaxSide && frames >= 1 && frames <= MaxFrames;
 
@@ -273,9 +284,23 @@ namespace WallpaperEngine.Core
 			return clip?.Current();
 		}
 
+		internal static bool Loaded(string path) =>
+			!string.IsNullOrEmpty(path) && Clips.ContainsKey(path);
+
 		internal static void Advance(string path, DateTime write)
 		{
 			GetOrLoad(path, write)?.Present();
+		}
+
+		internal static void Pulse()
+		{
+			CanUpload = true;
+			try {
+				AdvanceActive();
+			}
+			finally {
+				CanUpload = false;
+			}
 		}
 
 		internal static void AdvanceActive()
@@ -333,23 +358,17 @@ namespace WallpaperEngine.Core
 			}
 
 			clip = Load(path);
-			if (clip == null || clip.Frames == null || clip.Frames.Length < 2) {
-				KnownStill[path] = write;
-				clip?.Dispose();
+			if (clip == null)
+				return null;
+			if (clip.Frames == null || clip.Frames.Length < 2) {
+				if (clip.Frames is { Length: 1 })
+					KnownStill[path] = write;
+				clip.Dispose();
 				return null;
 			}
 
 			clip.Write = write;
-			try {
-				clip.KeepDelays();
-				clip.Bake();
-			}
-			catch {
-				clip.Dispose();
-				KnownStill[path] = write;
-				return null;
-			}
-
+			clip.KeepDelays();
 			Clips[path] = clip;
 			return clip;
 		}

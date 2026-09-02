@@ -1,3 +1,11 @@
+v0.8.7
+- GIFs actually decode: the palette reader was advancing a copy of the file cursor, so every GIF fell back to a still first frame. No extra libraries.
+
+v0.8.6
+- GIF playback: swap frames on a free texture (they stayed frozen on frame 1)
+- Wallpaper panel grouped: sky / layers / your images. Layer settings sit on the selected layer. Trash removes it (the old Remove button was clicking the file list instead)
+- Hash-looking filenames show as GIF · 3acd2f6a
+
 v0.8.5
 - GIF / animated PNG actually play on the menu (they were stuck on the first frame after import)
 - Remove layer works; trash on the layer row too. Last image layer falls back to vanilla sky

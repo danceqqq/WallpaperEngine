@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -224,164 +224,6 @@ namespace WallpaperEngine.UI
 			}
 		}
 
-		private static void DrawWallpaper(SpriteBatch spriteBatch, Rectangle panel, ref int y)
-		{
-			DrawHint(spriteBatch, panel, ref y, WeText.UI("LivePreview"));
-			DrawHint(spriteBatch, panel, ref y, WeText.UI("BorrowMix"));
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("VanillaSky"), WeSave.Data.Wallpaper == WallpaperKind.Vanilla);
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("SolidColor"), WeSave.Data.Wallpaper == WallpaperKind.Color);
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("Gradient"), WeSave.Data.Wallpaper == WallpaperKind.Gradient);
-			if (WeSave.Data.Wallpaper is WallpaperKind.Color or WallpaperKind.Gradient) {
-				DrawRgb(spriteBatch, panel, ref y, "wallA", WeSettings.WallpaperColorA);
-				if (WeSave.Data.Wallpaper == WallpaperKind.Gradient)
-					DrawRgb(spriteBatch, panel, ref y, "wallB", WeSettings.WallpaperColorB);
-			}
-
-			DrawSlider(spriteBatch, panel, ref y, "dim", WeSave.Data.WallpaperDim, WeText.UI("WallpaperDim"));
-			DrawSlider(spriteBatch, panel, ref y, "vignette", WeSave.Data.WallpaperVignette, WeText.UI("WallpaperVignette"));
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("WallpaperParallax"), WeSave.Data.WallpaperParallax);
-			DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("AddImageLayer"), WeText.UI("AddEffectLayer"));
-			DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("ImportImage"), WeText.UI("OpenFolder"));
-			DrawHint(spriteBatch, panel, ref y, WeText.UI("AnimHint"));
-			DrawHint(spriteBatch, panel, ref y, WeText.UI("SceneLayers"));
-			foreach (WeLayerRecord layer in WeSave.Data.Layers)
-				DrawLayerCard(spriteBatch, panel, ref y, layer);
-
-			WeLayerRecord selected = WeSettings.SelectedLayer();
-			if (selected != null) {
-				DrawCard(spriteBatch, panel, ref y, WeText.UI("LayerForeground"), selected.Foreground);
-				if (selected.Kind == WeLayerKind.Image) {
-					DrawCard(spriteBatch, panel, ref y, WeText.UI(FitKey(selected.Fit)), true);
-					DrawCard(spriteBatch, panel, ref y, WeText.UI("CenterImage"), false);
-				}
-				else
-					DrawCard(spriteBatch, panel, ref y, WeText.UI(FxKey(selected.Effect)), true);
-				DrawSlider(spriteBatch, panel, ref y, "lop", selected.Opacity, WeText.UI("LayerOpacity"));
-				DrawSlider(spriteBatch, panel, ref y, "lpar", selected.Parallax, WeText.UI("LayerParallax"));
-				DrawSlider(spriteBatch, panel, ref y, "lzm", (selected.Zoom - 0.6f) / 1.2f, WeText.UI("LayerZoom"));
-				DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("LayerUp"), WeText.UI("LayerDown"));
-				DrawCard(spriteBatch, panel, ref y, WeText.UI("RemoveLayer"), false);
-			}
-
-			foreach (WeArtRecord record in WeSave.Data.Wallpapers)
-				DrawArtCard(spriteBatch, panel, ref y, record, selected != null && selected.ArtId == record.Id, logo: false);
-
-			DrawBorrowSection(spriteBatch, panel, ref y, WeCatalog.Skies, WeOfferKind.Sky);
-		}
-
-		private static void ClickWallpaper(Rectangle panel, ref int y)
-		{
-			SkipHint(ref y);
-			SkipHint(ref y);
-			if (ClickCard(panel, ref y)) {
-				WeSettings.SetWallpaperVanilla();
-				return;
-			}
-
-			if (ClickCard(panel, ref y)) {
-				WeSettings.SetWallpaperColor(false);
-				return;
-			}
-
-			if (ClickCard(panel, ref y)) {
-				WeSettings.SetWallpaperColor(true);
-				return;
-			}
-
-			if (WeSave.Data.Wallpaper is WallpaperKind.Color or WallpaperKind.Gradient) {
-				ClickRgb(panel, ref y, "wallA");
-				if (WeSave.Data.Wallpaper == WallpaperKind.Gradient)
-					ClickRgb(panel, ref y, "wallB");
-			}
-
-			ClickSlider(panel, ref y, "dim");
-			ClickSlider(panel, ref y, "vignette");
-			if (ClickCard(panel, ref y)) {
-				WeSave.Data.WallpaperParallax = !WeSave.Data.WallpaperParallax;
-				WeSave.Save();
-				return;
-			}
-
-			if (ClickRow(panel, ref y, out int addWhich)) {
-				if (addWhich == 0)
-					WeSettings.AddImageLayer(WeSave.Data.Wallpaper == WallpaperKind.Image ? WeSave.Data.WallpaperId : "");
-				else
-					WeSettings.AddEffectLayer(WeFxKind.Stars);
-				return;
-			}
-
-			if (ClickRow(panel, ref y, out int importWhich)) {
-				if (importWhich == 0)
-					WeArt.TryImportWallpaper();
-				else
-					WeFiles.OpenFolder(WeSave.WallpaperFolder);
-				return;
-			}
-
-			SkipHint(ref y);
-			SkipHint(ref y);
-			foreach (WeLayerRecord layer in WeSave.Data.Layers.ToArray()) {
-				if (!ClickLayerRow(panel, ref y, out bool trash))
-					continue;
-				if (trash)
-					WeSettings.RemoveLayer(layer.Id);
-				else
-					WeSettings.SelectLayer(layer.Id);
-				if (trash)
-					WeToast.Show("ToastLayerGone");
-				return;
-			}
-
-			WeLayerRecord selected = WeSettings.SelectedLayer();
-			if (selected != null) {
-				if (ClickCard(panel, ref y)) {
-					WeSettings.ToggleSelectedForeground();
-					return;
-				}
-
-				if (selected.Kind == WeLayerKind.Image) {
-					if (ClickCard(panel, ref y)) {
-						WeSettings.CycleSelectedFit();
-						return;
-					}
-
-					if (ClickCard(panel, ref y)) {
-						WeSettings.CenterWallpaperPan();
-						return;
-					}
-				}
-				else if (ClickCard(panel, ref y)) {
-					WeSettings.CycleSelectedEffect();
-					return;
-				}
-
-				ClickSlider(panel, ref y, "lop");
-				ClickSlider(panel, ref y, "lpar");
-				ClickSlider(panel, ref y, "lzm");
-				if (ClickRow(panel, ref y, out int moveWhich)) {
-					if (moveWhich == 0)
-						WeSettings.MoveSelectedLayer(-1);
-					else
-						WeSettings.MoveSelectedLayer(1);
-					return;
-				}
-
-				if (ClickCard(panel, ref y)) {
-					WeSettings.RemoveSelectedLayer();
-					WeToast.Show("ToastLayerGone");
-					return;
-				}
-			}
-
-			foreach (WeArtRecord record in WeSave.Data.Wallpapers.ToArray()) {
-				if (ClickArt(panel, ref y, record, false)) {
-					WeSettings.AssignSelectedImage(record.Id);
-					return;
-				}
-			}
-
-			ClickBorrowSection(panel, ref y, WeCatalog.Skies, WeOfferKind.Sky);
-		}
 
 		private static void DrawLogo(SpriteBatch spriteBatch, Rectangle panel, ref int y)
 		{
@@ -867,38 +709,6 @@ namespace WallpaperEngine.UI
 			return hit.Contains(Main.mouseX, Main.mouseY);
 		}
 
-		private static void DrawLayerCard(SpriteBatch spriteBatch, Rectangle panel, ref int y, WeLayerRecord layer)
-		{
-			Rectangle hit = Row(panel, y, 36);
-			Rectangle trash = TrashRect(hit);
-			Rectangle body = new(hit.X, hit.Y, Math.Max(8, trash.X - hit.X - 8), hit.Height);
-			bool on = layer.Id == WeSave.Data.SelectedLayerId;
-			bool hover = body.Contains(Main.mouseX, Main.mouseY);
-			WeDraw.Fill(spriteBatch, body, (on ? WeAccent.Deep : new Color(28, 30, 38)) * ((hover ? 0.95f : 0.8f) * _fade));
-			WeDraw.Border(spriteBatch, body, (on || hover ? WeAccent.Light : WeAccent.Mid) * _fade);
-			ChatManager.DrawColorCodedStringWithShadow(
-				spriteBatch, FontAssets.MouseText.Value, Ellipsize(LayerTitle(layer), 28),
-				new Vector2(body.X + 12, hit.Y + 8), Color.White * _fade, 0f, Vector2.Zero, new Vector2(0.82f));
-			RoundButton.DrawIcon(spriteBatch, trash.Center.ToVector2(), 12f, WeIcons.Get(WeIcons.Trash), 0f, _fade);
-			RoundButton.Tooltip(spriteBatch, trash.Center.ToVector2(), 12f, WeText.UI("RemoveLayer"), _fade);
-			y += 42;
-		}
-
-		private static bool ClickLayerRow(Rectangle panel, ref int y, out bool trash)
-		{
-			Rectangle hit = Row(panel, y, 36);
-			Rectangle bin = TrashRect(hit);
-			Rectangle body = new(hit.X, hit.Y, Math.Max(8, bin.X - hit.X - 8), hit.Height);
-			y += 42;
-			trash = false;
-			if (bin.Contains(Main.mouseX, Main.mouseY)) {
-				trash = true;
-				return true;
-			}
-
-			return body.Contains(Main.mouseX, Main.mouseY);
-		}
-
 		private static void DrawCard(SpriteBatch spriteBatch, Rectangle panel, ref int y, string text, bool on)
 		{
 			Rectangle hit = Row(panel, y, 36);
@@ -1116,6 +926,14 @@ namespace WallpaperEngine.UI
 			ChatManager.DrawColorCodedStringWithShadow(
 				spriteBatch, FontAssets.MouseText.Value, sub,
 				new Vector2(hit.X + 126, hit.Y + 28), Color.White * (0.62f * _fade), 0f, Vector2.Zero, new Vector2(0.68f));
+			if (_id == WePanelId.Wallpaper) {
+				string borrowId = offer.Id;
+				Arm(hit, () => {
+					WeSettings.SetWallpaperBorrowed(borrowId);
+					WeToast.Show("ToastWallpaper");
+				});
+			}
+
 			y += 62;
 		}
 
@@ -1398,6 +1216,9 @@ namespace WallpaperEngine.UI
 
 			if (_id == WePanelId.Client)
 				return Math.Max(0f, ClientContentHeight() - View(PanelRect()).Height);
+
+			if (_id == WePanelId.Wallpaper)
+				return Math.Max(0f, _wallHeight - View(PanelRect()).Height);
 
 			float extra = WeSave.Data.Layers.Count * 42f + WeSave.Data.Wallpapers.Count * 58f + WeSave.Data.Logos.Count * 58f +
 			              WeSave.Data.Tracks.Count * 42f + WeCatalog.Skies.Count * 62f + WeCatalog.Logos.Count * 62f +
