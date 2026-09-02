@@ -42,6 +42,7 @@ namespace WallpaperEngine.Content
 			WePresetLogos.Unload();
 			WeDraw.Unload();
 			ClientChrome.Unload();
+			WeType.Unload();
 		}
 
 		internal static void TickLogic()

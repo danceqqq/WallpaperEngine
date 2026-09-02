@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Audio;
 using NLayer;
 using NVorbis;
 using Terraria;
+using WallpaperEngine.Core;
 
 namespace WallpaperEngine.Audio
 {
@@ -32,6 +33,8 @@ namespace WallpaperEngine.Audio
 		private static int _spectrumFilled;
 		private static int _emptyReads;
 
+		private static bool _ducked;
+
 		internal static bool IsPlaying => _instance != null && !_paused && !_finished;
 		internal static bool IsPaused => _paused;
 		internal static bool HasOutput => _instance != null;
@@ -59,6 +62,7 @@ namespace WallpaperEngine.Audio
 				_path = path;
 				_paused = false;
 				_finished = false;
+				_ducked = false;
 				_emptyReads = 0;
 				_time = 0f;
 				_frames = new short[ChunkFrames * _channels];
@@ -86,6 +90,7 @@ namespace WallpaperEngine.Audio
 			_spectrumFilled = 0;
 			_finished = false;
 			_paused = false;
+			_ducked = false;
 			_time = 0f;
 			_path = null;
 			_readFrames = null;
@@ -170,6 +175,7 @@ namespace WallpaperEngine.Audio
 				return;
 
 			if (_paused || _finished) {
+				_ducked = false;
 				Amplitude = 0f;
 				try {
 					_instance.Volume = 0f;
@@ -180,6 +186,31 @@ namespace WallpaperEngine.Audio
 				}
 
 				return;
+			}
+
+			if (WeSave.Data.MuteWhenUnfocused && !Main.hasFocus) {
+				_ducked = true;
+				Amplitude = 0f;
+				try {
+					_instance.Volume = 0f;
+					if (_instance.State == SoundState.Playing)
+						_instance.Pause();
+				}
+				catch {
+				}
+
+				return;
+			}
+
+			if (_ducked) {
+				_ducked = false;
+				try {
+					_instance.Volume = Volume();
+					if (_instance.State == SoundState.Paused)
+						_instance.Resume();
+				}
+				catch {
+				}
 			}
 
 			_instance.Volume = Volume();
@@ -277,6 +308,8 @@ namespace WallpaperEngine.Audio
 
 		private static float Volume()
 		{
+			if (WeSave.Data.MuteWhenUnfocused && !Main.hasFocus)
+				return 0f;
 			return Math.Clamp(Main.musicVolume * WePlaylist.OutputMix, 0f, 1f);
 		}
 

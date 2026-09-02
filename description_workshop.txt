@@ -15,9 +15,12 @@ Logo and wallpaper are independent. You can take a logo from one mod menu and a 
 [*] Clock, greeting, moon-phase, and Discord server widgets (voice channels, Join opens the Discord app)
 [*] Drag, scale, or hide title-screen elements
 [*] Recolor the tModLoader window caption and border, and pick circle or bar style for the customize hub (client)
+[*] Import TTF/OTF fonts for menu buttons (width, height, and button styles)
 [/list]
 
 [h2]Changelog[/h2]
+[b]0.8.3[/b] Client settings grouped into live-preview cards. Import TTF/OTF fonts for menu buttons (width/height + button styles).
+[b]0.8.2[/b] Toggle logo bounce. Mute custom music when Terraria is in the background. Menu text color + font + button styles. Save/load Looks (presets) from Client settings.
 [b]0.8.1[/b] Custom music keeps playing on Characters / Worlds and on the title player (no more stuck 0:00). Imported wallpapers center (and can be centered from the panel). Three built-in logos: Watermelon 1 / 2 and Blue Archive Style.
 [b]0.8[/b] Holding buttons no longer repeats (player skip/pause/loop/shuffle, wrench, panels).
 [b]0.7[/b] Discord banner shows voice channels and scrolls. Member list has Join on people in voice. Widget tiles expand settings on hover. Clicks no longer pass through open panels. Social icons back at native tML spots. Discord voice follows who is actually in a channel.

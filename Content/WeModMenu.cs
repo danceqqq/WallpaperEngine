@@ -75,6 +75,7 @@ namespace WallpaperEngine.Content
 			WePanels.Close();
 			LayoutEditor.Reset();
 			WrenchToolbar.OnThemeSelected();
+			WeType.Scan();
 		}
 
 		public override void OnDeselected()
@@ -118,6 +119,7 @@ namespace WallpaperEngine.Content
 			ref Color drawColor)
 		{
 			Tick();
+			WeLook.StabilizeLogo(ref logoRotation, ref logoScale);
 			WeBackgroundStyle.Draw(spriteBatch);
 			WeBackgroundStyle.DrawAtmosphere(spriteBatch);
 			if (WeSave.Data.Logo is LogoKind.Custom or LogoKind.Hidden or LogoKind.Borrowed or LogoKind.Preset || SceneGraph.Get(SceneGraph.Logo).Customized)

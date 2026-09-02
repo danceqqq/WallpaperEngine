@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -218,12 +218,20 @@ namespace WallpaperEngine.Chrome
 				scale *= SceneGraph.ScaleOf(SceneGraph.MenuButtons);
 			}
 
-			if (!wave || string.IsNullOrEmpty(text) || color.A < 16) {
-				spriteBatch.DrawString(spriteFont, text, position, color, rotation, origin, scale, effects, layerDepth);
+			Color paint = wave && ShouldShift() ? WeAccent.Hover : (ShouldShift() ? WeLook.IdleOr(color) : color);
+			if (ShouldShift() && WeLook.CustomMenuDraw) {
+				WeLook.DrawStyled(
+					spriteBatch, spriteFont, text, position, paint, scale, origin,
+					rotation, effects, layerDepth, false);
 				return;
 			}
 
-			spriteBatch.DrawString(spriteFont, text, position, WeAccent.Hover, rotation, origin, scale, effects, layerDepth);
+			if (!wave || string.IsNullOrEmpty(text) || color.A < 16) {
+				spriteBatch.DrawString(spriteFont, text, position, paint, rotation, origin, scale, effects, layerDepth);
+				return;
+			}
+
+			spriteBatch.DrawString(spriteFont, text, position, paint, rotation, origin, scale, effects, layerDepth);
 		}
 
 		private static Vector2 DrawBorderStringBigHook(
@@ -243,6 +251,19 @@ namespace WallpaperEngine.Chrome
 
 				ShiftLayout(ref pos, text, scale, anchorx, anchory);
 				scale *= SceneGraph.ScaleOf(SceneGraph.MenuButtons);
+				Color paint = WeLook.IdleOr(color);
+				if (WeLook.CustomMenuDraw) {
+					var vanilla = FontAssets.DeathText.Value;
+					if (maxCharactersDisplayed >= 0 && text != null && text.Length > maxCharactersDisplayed)
+						text = text.Substring(0, maxCharactersDisplayed);
+					Vector2 size = vanilla.MeasureString(text);
+					Vector2 origin = size * new Vector2(anchorx, anchory);
+					return WeLook.DrawStyled(
+						spriteBatch, vanilla, text, pos, paint, scale, origin,
+						0f, SpriteEffects.None, 0f, true);
+				}
+
+				return orig(spriteBatch, text, pos, paint, scale, anchorx, anchory, maxCharactersDisplayed);
 			}
 
 			return orig(spriteBatch, text, pos, color, scale, anchorx, anchory, maxCharactersDisplayed);
@@ -269,10 +290,21 @@ namespace WallpaperEngine.Chrome
 			BeginPass(layoutY);
 			position.Y += menu.Y - VanillaMenuY;
 			_remapYNext = (int)Math.Round(menu.Y - VanillaMenuY);
-			Vector2 size = font.MeasureString(text) * scale;
+			Vector2 size = WeLook.Measure(font, text, scale);
+			Vector2 originUse = origin;
+			if (WeType.Active) {
+				Vector2 oldSize = font.MeasureString(text);
+				Vector2 newSize = WeType.Measure(text);
+				if (oldSize.X > 0.5f && oldSize.Y > 0.5f && newSize.X > 0.5f)
+					originUse = new Vector2(origin.X / oldSize.X * newSize.X, origin.Y / oldSize.Y * newSize.Y);
+			}
+
+			Vector2 sc = WeLook.MenuScale(scale);
+			if (WeType.Active && WeType.Line > 1f)
+				sc *= font.MeasureString("Ag").Y / WeType.Line;
 			NoteBounds(
-				(int)MathF.Round(position.X - origin.X * scale),
-				(int)MathF.Round(position.Y - origin.Y * scale),
+				(int)MathF.Round(position.X - originUse.X * sc.X),
+				(int)MathF.Round(position.Y - originUse.Y * sc.Y),
 				Math.Max(1, (int)MathF.Ceiling(size.X)),
 				Math.Max(1, (int)MathF.Ceiling(size.Y)));
 		}
@@ -283,8 +315,8 @@ namespace WallpaperEngine.Chrome
 			BeginPass(pos.Y);
 			pos.Y += menu.Y - VanillaMenuY;
 			_remapYNext = (int)Math.Round(menu.Y - VanillaMenuY);
-			var font = FontAssets.DeathText.Value;
-			Vector2 size = font.MeasureString(text) * scale;
+			var vanilla = FontAssets.DeathText.Value;
+			Vector2 size = WeLook.Measure(vanilla, text, scale);
 			NoteBounds(
 				(int)MathF.Round(pos.X - size.X * anchorx),
 				(int)MathF.Round(pos.Y - size.Y * anchory),

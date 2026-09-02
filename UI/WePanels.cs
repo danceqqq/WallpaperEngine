@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -28,7 +28,7 @@ namespace WallpaperEngine.UI
 		Client
 	}
 
-	internal static class WePanels
+	internal static partial class WePanels
 	{
 		private static WePanelId _id;
 		private static float _fade;
@@ -36,9 +36,12 @@ namespace WallpaperEngine.UI
 		private static bool _frameInput;
 		private static bool _mouseHeld;
 		private static bool _holdLock;
+		private static bool _rightHeld;
+		private static bool _rightLock;
 		private static int _lastWheel;
 		private static string _dragSlider;
 		private static bool _ateInput;
+		private static int _clientChip;
 		private const int SlotCount = 5;
 		private const int SlotPlayer = 0;
 		private const int SlotClock = 1;
@@ -64,6 +67,8 @@ namespace WallpaperEngine.UI
 			WeArt.Scan();
 			WeLibrary.ScanIntoSave();
 			WeCatalog.Refresh();
+			WePresets.Refresh();
+			WeType.Scan();
 			SoundEngine.PlaySound(SoundID.MenuOpen);
 		}
 
@@ -97,6 +102,7 @@ namespace WallpaperEngine.UI
 			_frameInput = true;
 
 			bool pressed = WeInput.Edge(ref _mouseHeld, ref _holdLock);
+			bool rightPressed = WeInput.Edge(WeInput.RightDown, ref _rightHeld, ref _rightLock);
 			if (!IsOpen)
 				return;
 
@@ -117,17 +123,24 @@ namespace WallpaperEngine.UI
 				return;
 			}
 
-			if (!pressed)
+			if (!pressed && !rightPressed)
 				return;
 
 			if (!panel.Contains(Main.mouseX, Main.mouseY)) {
-				Close();
-				WeInput.LockHold(ref _holdLock);
+				if (pressed)
+					Close();
+				if (pressed)
+					WeInput.LockHold(ref _holdLock);
+				if (rightPressed)
+					WeInput.LockHold(ref _rightLock);
 				return;
 			}
 
 			HandleClicks(panel);
-			WeInput.LockHold(ref _holdLock);
+			if (pressed)
+				WeInput.LockHold(ref _holdLock);
+			if (rightPressed)
+				WeInput.LockHold(ref _rightLock);
 		}
 
 		internal static void EndFrame()
@@ -338,6 +351,7 @@ namespace WallpaperEngine.UI
 			DrawHint(spriteBatch, panel, ref y, WeText.UI("BorrowMix"));
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("VanillaLogo"), WeSave.Data.Logo == LogoKind.Vanilla);
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("HideLogo"), WeSave.Data.Logo == LogoKind.Hidden);
+			DrawCard(spriteBatch, panel, ref y, WeText.UI("LogoPulse"), WeLook.LogoPulse);
 			foreach (string id in WePresetLogos.Ids)
 				DrawPresetCard(spriteBatch, panel, ref y, id);
 			DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("ImportImage"), WeText.UI("OpenFolder"));
@@ -354,6 +368,8 @@ namespace WallpaperEngine.UI
 				WeSettings.SetLogo(LogoKind.Vanilla);
 			if (ClickCard(panel, ref y))
 				WeSettings.SetLogo(LogoKind.Hidden);
+			if (ClickCard(panel, ref y))
+				WeSettings.ToggleLogoPulse();
 			foreach (string id in WePresetLogos.Ids) {
 				if (!ClickBorrow(panel, ref y))
 					continue;
@@ -379,6 +395,7 @@ namespace WallpaperEngine.UI
 		{
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("VanillaMusic"), WeSave.Data.Music == MusicKind.Vanilla);
 			DrawCard(spriteBatch, panel, ref y, WeText.UI("Silence"), WeSave.Data.Music == MusicKind.Silence);
+			DrawCard(spriteBatch, panel, ref y, WeText.UI("MuteUnfocused"), WeSave.Data.MuteWhenUnfocused);
 			DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("ImportSong"), WeText.UI("OpenFolder"));
 			DrawHint(spriteBatch, panel, ref y, WeText.UI(WeSave.Data.Tracks.Count == 0 ? "NoTracks" : "TrackHint"));
 			foreach (WeTrackRecord track in WeSave.Data.Tracks)
@@ -398,6 +415,9 @@ namespace WallpaperEngine.UI
 				WePlaylist.Silence();
 				WeToast.Show("ToastMusic");
 			}
+
+			if (ClickCard(panel, ref y))
+				WeSettings.ToggleMuteUnfocused();
 
 			if (ClickRow(panel, ref y, out int which)) {
 				if (which == 0) {
@@ -484,61 +504,21 @@ namespace WallpaperEngine.UI
 
 		private static void DrawClient(SpriteBatch spriteBatch, Rectangle panel, ref int y)
 		{
-			DrawHint(spriteBatch, panel, ref y, WeText.UI("BorderlessHint"));
-			DrawHint(spriteBatch, panel, ref y, WeText.UI("HubStyle"));
-			DrawHubStyle(spriteBatch, panel, ref y, 0);
-			DrawHubStyle(spriteBatch, panel, ref y, 1);
-			DrawRgb(spriteBatch, panel, ref y, "caption", WeSettings.CaptionColor, WeText.UI("CaptionColor"));
-			DrawRgb(spriteBatch, panel, ref y, "border", WeSettings.BorderColor, WeText.UI("BorderColor"));
-			DrawRgb(spriteBatch, panel, ref y, "title", WeSettings.TitleTextColor, WeText.UI("TitleTextColor"));
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("DarkTitleBar"), WeSave.Data.DarkTitleBar);
-			DrawButtonRow(spriteBatch, panel, ref y, WeText.UI("PickIcon"), WeText.UI("ResetChrome"));
-			DrawCard(spriteBatch, panel, ref y, WeText.UI("ShowHelp"), false);
-			DrawHint(spriteBatch, panel, ref y, WeText.UI("Accent"));
-			for (int i = 0; i < WeAccent.Palettes.Length; i++)
-				DrawAccent(spriteBatch, panel, ref y, i);
+			ClientLooks(spriteBatch, panel, ref y, false);
+			ClientHub(spriteBatch, panel, ref y, false);
+			ClientWindow(spriteBatch, panel, ref y, false);
+			ClientMenu(spriteBatch, panel, ref y, false);
+			ClientAccent(spriteBatch, panel, ref y, false);
 		}
 
 		private static void ClickClient(Rectangle panel, ref int y)
 		{
-			SkipHint(ref y);
-			SkipHint(ref y);
-			if (ClickHubStyle(panel, ref y, 0))
-				WeSettings.SetWrenchStyle(0);
-			if (ClickHubStyle(panel, ref y, 1))
-				WeSettings.SetWrenchStyle(1);
-			ClickRgb(panel, ref y, "caption", true);
-			ClickRgb(panel, ref y, "border", true);
-			ClickRgb(panel, ref y, "title", true);
-			if (ClickCard(panel, ref y)) {
-				WeSave.Data.DarkTitleBar = !WeSave.Data.DarkTitleBar;
-				WeSave.Data.ChromeCustom = true;
-				WeSave.Save();
-				ClientChrome.Apply();
-				WeToast.Show("ToastChrome");
-			}
-
-			if (ClickRow(panel, ref y, out int which)) {
-				if (which == 0) {
-					if (WeFiles.TryPickIcon(out string path))
-						ClientChrome.SetIcon(path);
-				}
-				else {
-					ClientChrome.Reset();
-					WeToast.Show("ToastReset");
-				}
-			}
-
-			if (ClickCard(panel, ref y))
-				WeSplash.Show();
-
-			SkipHint(ref y);
-			for (int i = 0; i < WeAccent.Palettes.Length; i++) {
-				if (ClickAccent(panel, ref y))
-					WeAccent.Set(i);
-			}
+			ClientLooks(null, panel, ref y, true);
+			ClientHub(null, panel, ref y, true);
+			ClientWindow(null, panel, ref y, true);
+			ClientMenu(null, panel, ref y, true);
+			ClientAccent(null, panel, ref y, true);
 		}
-
 		private static void DrawHubStyle(SpriteBatch spriteBatch, Rectangle panel, ref int y, int style)
 		{
 			Rectangle hit = Row(panel, y, 92);
@@ -844,6 +824,21 @@ namespace WallpaperEngine.UI
 			Rectangle hit = Row(panel, y, 36);
 			y += 42;
 			return hit.Contains(Main.mouseX, Main.mouseY);
+		}
+
+		private static bool ClickLook(Rectangle panel, ref int y, out bool trash)
+		{
+			Rectangle hit = Row(panel, y, 36);
+			y += 42;
+			trash = false;
+			if (!hit.Contains(Main.mouseX, Main.mouseY))
+				return false;
+			if (Main.mouseRight) {
+				trash = true;
+				return true;
+			}
+
+			return true;
 		}
 
 		private static void DrawButtonRow(SpriteBatch spriteBatch, Rectangle panel, ref int y, string a, string b)
@@ -1158,6 +1153,11 @@ namespace WallpaperEngine.UI
 				return;
 			}
 
+			if (key == "fw" || key == "fh") {
+				WeSettings.SetFontScale(key == "fw", 0.5f + t * 1.3f);
+				return;
+			}
+
 			if (key is "lop" or "lpar" or "lzm") {
 				WeLayerRecord layer = WeSettings.SelectedLayer();
 				if (layer == null)
@@ -1185,6 +1185,18 @@ namespace WallpaperEngine.UI
 				else
 					c.B = (byte)v;
 				WeSettings.SetWallpaperRgb(second, c.R, c.G, c.B);
+				return;
+			}
+
+			if (key.StartsWith("menu")) {
+				Color c = WeSettings.MenuTextColor;
+				if (key.EndsWith("R"))
+					c.R = (byte)v;
+				else if (key.EndsWith("G"))
+					c.G = (byte)v;
+				else
+					c.B = (byte)v;
+				WeSettings.SetMenuTextRgb(c.R, c.G, c.B);
 				return;
 			}
 
@@ -1223,9 +1235,9 @@ namespace WallpaperEngine.UI
 				return new Rectangle(Main.screenWidth - w - 16, 20, w, h);
 			}
 
-			if (_id == WePanelId.Widgets) {
-				int ww = Math.Min(580, Main.screenWidth - 72);
-				int wh = Math.Min(640, Main.screenHeight - 56);
+			if (_id == WePanelId.Widgets || _id == WePanelId.Client) {
+				int ww = Math.Min(600, Main.screenWidth - 72);
+				int wh = Math.Min(660, Main.screenHeight - 56);
 				return new Rectangle((Main.screenWidth - ww) / 2, (Main.screenHeight - wh) / 2, ww, wh);
 			}
 
@@ -1291,10 +1303,14 @@ namespace WallpaperEngine.UI
 				return Math.Max(0f, content - View(PanelRect()).Height);
 			}
 
+			if (_id == WePanelId.Client)
+				return Math.Max(0f, ClientContentHeight() - View(PanelRect()).Height);
+
 			float extra = WeSave.Data.Layers.Count * 42f + WeSave.Data.Wallpapers.Count * 58f + WeSave.Data.Logos.Count * 58f +
 			              WeSave.Data.Tracks.Count * 42f + WeCatalog.Skies.Count * 62f + WeCatalog.Logos.Count * 62f +
-			              (_id == WePanelId.Logo ? WePresetLogos.Ids.Length * 62f : 0f) +
-			              (_id == WePanelId.Wallpaper ? 42f : 0f);
+			              (_id == WePanelId.Logo ? WePresetLogos.Ids.Length * 62f + 42f : 0f) +
+			              (_id == WePanelId.Wallpaper ? 42f : 0f) +
+			              (_id == WePanelId.Music ? 42f : 0f);
 			return 720f + extra;
 		}
 	}

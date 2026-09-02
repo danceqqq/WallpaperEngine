@@ -167,4 +167,32 @@ UI: {
 	Green: Green
 	Blue: Blue
 	Accent: Accent color
+	LogoPulse: Logo grow / shrink
+	MuteUnfocused: Mute player when Terraria is in the background
+	Looks: Looks
+	SaveLook: Save current look
+	LookHint: Click a look to load it. Right-click deletes it.
+	ToastLookSaved: Look saved
+	ToastLookLoaded: Look applied
+	ToastLookGone: Look deleted
+	MenuTextColor: Menu text color
+	MenuTextCustom: Custom menu text color
+	BtnVanilla: Vanilla
+	BtnOutline: Outline
+	BtnAccent: Accent
+	BtnPlate: Plate
+	GroupWindow: Window
+	GroupMenu: Menu buttons
+	MenuPreview: Single Player
+	FontVanilla: tModLoader font
+	ImportFont: Import font
+	FontHint: TTF or OTF. Click to use. Right-click deletes.
+	FontWidth: Width
+	FontHeight: Height
+	ChipCaption: Bar
+	ChipBorder: Border
+	ChipTitle: Text
+	ToastFont: Font applied
+	ToastFontFail: Could not load that font
+	ToastFontGone: Font removed
 }

@@ -12,6 +12,7 @@ namespace WallpaperEngine.Core
 		internal static bool TryPickAudio(out string path) => TryPick(out path, ShowAudio);
 		internal static bool TryPickImage(out string path) => TryPick(out path, ShowImage);
 		internal static bool TryPickIcon(out string path) => TryPick(out path, ShowIcon);
+		internal static bool TryPickFont(out string path) => TryPick(out path, ShowFont);
 
 		internal static void OpenFile(string path)
 		{
@@ -66,6 +67,10 @@ namespace WallpaperEngine.Core
 		private static string ShowIcon() => ShowDialog(
 			"Icons (*.ico;*.png;*.jpg;*.jpeg)\0*.ico;*.png;*.jpg;*.jpeg\0ICO\0*.ico\0PNG\0*.png\0",
 			"Choose a window icon");
+
+		private static string ShowFont() => ShowDialog(
+			"Fonts (*.ttf;*.otf)\0*.ttf;*.otf\0TrueType\0*.ttf\0OpenType\0*.otf\0",
+			"Choose a font");
 
 		private static string ShowDialog(string filter, string title)
 		{

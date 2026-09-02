@@ -167,4 +167,32 @@ UI: {
 	Green: Зелёный
 	Blue: Синий
 	Accent: Акцент
+	LogoPulse: Пульсация логотипа
+	MuteUnfocused: Без звука, когда Terraria в фоне
+	Looks: Пресеты
+	SaveLook: Сохранить пресет
+	LookHint: Нажми пресет, чтобы загрузить. ПКМ — удалить.
+	ToastLookSaved: Пресет сохранён
+	ToastLookLoaded: Пресет применён
+	ToastLookGone: Пресет удалён
+	MenuTextColor: Цвет текста меню
+	MenuTextCustom: Свой цвет текста меню
+	BtnVanilla: Ваниль
+	BtnOutline: Обводка
+	BtnAccent: Акцент
+	BtnPlate: Плашка
+	GroupWindow: Окно
+	GroupMenu: Кнопки меню
+	MenuPreview: Один игрок
+	FontVanilla: Шрифт tModLoader
+	ImportFont: Загрузить шрифт
+	FontHint: TTF или OTF. Клик — выбрать. ПКМ — удалить.
+	FontWidth: Ширина
+	FontHeight: Высота
+	ChipCaption: Фон
+	ChipBorder: Рамка
+	ChipTitle: Текст
+	ToastFont: Шрифт применён
+	ToastFontFail: Не удалось загрузить шрифт
+	ToastFontGone: Шрифт удалён
 }

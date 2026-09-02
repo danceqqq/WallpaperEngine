@@ -49,7 +49,7 @@ namespace WallpaperEngine.Widgets
 			float scale = 0.55f * Scale;
 			Vector2 size = font.MeasureString(time) * scale;
 			Vector2 pos = Anchor - size * 0.5f;
-			ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, time, pos, Color.White * fade, 0f, Vector2.Zero, new Vector2(scale));
+			ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, time, pos, WeLook.Paint(Color.White, fade), 0f, Vector2.Zero, new Vector2(scale));
 			if (!WeSave.Data.ClockDate)
 				return;
 
@@ -59,7 +59,7 @@ namespace WallpaperEngine.Widgets
 			ChatManager.DrawColorCodedStringWithShadow(
 				spriteBatch, small, date,
 				new Vector2(Anchor.X - dateSize.X * 0.5f, pos.Y + size.Y - 4f),
-				WeAccent.Light * fade, 0f, Vector2.Zero, new Vector2(0.78f * Scale));
+				WeLook.Paint(WeAccent.Light, fade), 0f, Vector2.Zero, new Vector2(0.78f * Scale));
 		}
 
 		private static void DrawAnalog(SpriteBatch spriteBatch, DateTime now, float fade)
@@ -109,7 +109,7 @@ namespace WallpaperEngine.Widgets
 			float scale = Math.Min((box.Width - 10f) / Math.Max(1f, size.X), (box.Height - 8f) / Math.Max(1f, size.Y));
 			scale = Math.Min(scale, 0.48f);
 			Vector2 pos = center - size * scale * 0.5f;
-			ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, time, pos, Color.White * fade, 0f, Vector2.Zero, new Vector2(scale));
+			ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, time, pos, WeLook.Paint(Color.White, fade), 0f, Vector2.Zero, new Vector2(scale));
 		}
 	}
 }

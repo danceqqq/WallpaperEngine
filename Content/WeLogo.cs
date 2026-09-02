@@ -55,6 +55,7 @@ namespace WallpaperEngine.Content
 			if (!SceneGraph.Visible(SceneGraph.Logo))
 				return;
 
+			WeLook.StabilizeLogo(ref rotation, ref bounce);
 			bounce = MathHelper.Clamp(bounce, 0.5f, 1.6f);
 			if (WeSave.Data.Logo == LogoKind.Preset && WePresetLogos.Draw(spriteBatch, fade, rotation, bounce))
 				return;

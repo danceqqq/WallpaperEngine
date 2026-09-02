@@ -376,6 +376,16 @@ namespace WallpaperEngine.Core
 			Current.DiscordStyle = 0;
 			Current.CleanChrome = false;
 			Current.WrenchStyle = 0;
+			Current.DisableLogoPulse = false;
+			Current.MuteWhenUnfocused = false;
+			Current.MenuTextCustom = false;
+			Current.MenuTextR = 255;
+			Current.MenuTextG = 255;
+			Current.MenuTextB = 255;
+			Current.ButtonStyle = 0;
+			Current.FontFile = "";
+			Current.FontScaleX = 1f;
+			Current.FontScaleY = 1f;
 			Current.Layers.Clear();
 			Current.SelectedLayerId = "";
 			foreach (WeElementRecord element in Current.Elements) {
@@ -385,11 +395,62 @@ namespace WallpaperEngine.Core
 			}
 
 			WeSave.Save();
+			WeType.Scan();
 		}
 
 		internal static Color CaptionColor => new(Current.CaptionR, Current.CaptionG, Current.CaptionB);
 		internal static Color BorderColor => new(Current.BorderR, Current.BorderG, Current.BorderB);
 		internal static Color TitleTextColor => new(Current.TitleTextR, Current.TitleTextG, Current.TitleTextB);
+		internal static Color MenuTextColor => new(Current.MenuTextR, Current.MenuTextG, Current.MenuTextB);
+
+		internal static void ToggleLogoPulse()
+		{
+			Current.DisableLogoPulse = !Current.DisableLogoPulse;
+			WeSave.Save();
+		}
+
+		internal static void ToggleMuteUnfocused()
+		{
+			Current.MuteWhenUnfocused = !Current.MuteWhenUnfocused;
+			WeSave.Save();
+		}
+
+		internal static void ToggleMenuTextCustom()
+		{
+			Current.MenuTextCustom = !Current.MenuTextCustom;
+			WeSave.Save();
+		}
+
+		internal static void CycleButtonStyle()
+		{
+			Current.ButtonStyle = (Current.ButtonStyle + 1) % 4;
+			WeSave.Save();
+		}
+
+		internal static void SetButtonStyle(int style)
+		{
+			Current.ButtonStyle = Math.Clamp(style, 0, 3);
+			WeSave.Save();
+		}
+
+		internal static void SetFontScale(bool width, float value)
+		{
+			value = Math.Clamp(value, 0.5f, 1.8f);
+			if (width)
+				Current.FontScaleX = value;
+			else
+				Current.FontScaleY = value;
+			WeSave.Save();
+		}
+
+		internal static void SetMenuTextRgb(int r, int g, int b)
+		{
+			Current.MenuTextR = Math.Clamp(r, 0, 255);
+			Current.MenuTextG = Math.Clamp(g, 0, 255);
+			Current.MenuTextB = Math.Clamp(b, 0, 255);
+			Current.MenuTextCustom = true;
+			WeSave.Save();
+		}
 
 		internal static void SetChromeRgb(string which, int r, int g, int b)
 		{

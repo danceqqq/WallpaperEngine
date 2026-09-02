@@ -154,6 +154,16 @@ namespace WallpaperEngine.Core
 		public bool DarkTitleBar { get; set; } = true;
 		public string WindowIconFile { get; set; } = "";
 		public int WrenchStyle { get; set; }
+		public bool DisableLogoPulse { get; set; }
+		public bool MuteWhenUnfocused { get; set; }
+		public bool MenuTextCustom { get; set; }
+		public int MenuTextR { get; set; } = 255;
+		public int MenuTextG { get; set; } = 255;
+		public int MenuTextB { get; set; } = 255;
+		public int ButtonStyle { get; set; }
+		public string FontFile { get; set; } = "";
+		public float FontScaleX { get; set; } = 1f;
+		public float FontScaleY { get; set; } = 1f;
 	}
 
 	internal static class WeSave
@@ -182,10 +192,12 @@ namespace WallpaperEngine.Core
 		internal static string LogoFolder => Path.Combine(RootFolder, "Logos");
 		internal static string WallpaperFolder => Path.Combine(RootFolder, "Wallpapers");
 		internal static string IconFolder => Path.Combine(RootFolder, "Icons");
+		internal static string FontFolder => Path.Combine(RootFolder, "Fonts");
 		internal static string QuotePath => Path.Combine(RootFolder, "quote.txt");
 		internal static string DiscordPath => Path.Combine(RootFolder, "discord.txt");
 		internal static string SettingsPath => Path.Combine(RootFolder, "settings.json");
 		internal static string PlayGuardPath => Path.Combine(RootFolder, "playing.lock");
+		internal static string PresetFolder => Path.Combine(RootFolder, "Looks");
 
 		internal static void EnsureFolders()
 		{
@@ -194,6 +206,8 @@ namespace WallpaperEngine.Core
 			Directory.CreateDirectory(LogoFolder);
 			Directory.CreateDirectory(WallpaperFolder);
 			Directory.CreateDirectory(IconFolder);
+			Directory.CreateDirectory(FontFolder);
+			Directory.CreateDirectory(PresetFolder);
 		}
 
 		internal static void EnsureLoaded()
@@ -233,6 +247,7 @@ namespace WallpaperEngine.Core
 			_data.LogoId ??= "";
 			_data.LoopedTrackId ??= "";
 			_data.WindowIconFile ??= "";
+			_data.FontFile ??= "";
 			_data.SelectedLayerId ??= "";
 			_data.DiscordGuildId ??= "";
 			if (_data.DiscordStyle < 0 || _data.DiscordStyle > 2)
@@ -255,6 +270,17 @@ namespace WallpaperEngine.Core
 				_data.AccentIndex = 0;
 			if (_data.WrenchStyle < 0 || _data.WrenchStyle > 1)
 				_data.WrenchStyle = 0;
+			if (_data.ButtonStyle < 0 || _data.ButtonStyle > 3)
+				_data.ButtonStyle = 0;
+			if (_data.FontScaleX <= 0.01f)
+				_data.FontScaleX = 1f;
+			if (_data.FontScaleY <= 0.01f)
+				_data.FontScaleY = 1f;
+			_data.FontScaleX = Math.Clamp(_data.FontScaleX, 0.5f, 1.8f);
+			_data.FontScaleY = Math.Clamp(_data.FontScaleY, 0.5f, 1.8f);
+			_data.MenuTextR = Math.Clamp(_data.MenuTextR, 0, 255);
+			_data.MenuTextG = Math.Clamp(_data.MenuTextG, 0, 255);
+			_data.MenuTextB = Math.Clamp(_data.MenuTextB, 0, 255);
 
 			foreach (WeArtRecord wall in _data.Wallpapers) {
 				if (wall == null)

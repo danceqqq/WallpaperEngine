@@ -97,13 +97,13 @@ namespace WallpaperEngine.Widgets
 			WeDraw.WithLinear(spriteBatch, () => {
 				ChatManager.DrawColorCodedStringWithShadow(
 					spriteBatch, titleFont, greeting, origin,
-					WeAccent.Light * fade, 0f, Vector2.Zero, new Vector2(titleScale));
+					WeLook.Paint(WeAccent.Light, fade), 0f, Vector2.Zero, new Vector2(titleScale));
 				if (string.IsNullOrEmpty(quote))
 					return;
 				ChatManager.DrawColorCodedStringWithShadow(
 					spriteBatch, bodyFont, quote,
 					new Vector2(Anchor.X - quoteSize.X * 0.5f, origin.Y + titleSize.Y + 2f),
-					Color.White * (0.88f * fade), 0f, Vector2.Zero, new Vector2(bodyScale));
+					WeLook.Paint(Color.White, 0.88f * fade), 0f, Vector2.Zero, new Vector2(bodyScale));
 			});
 		}
 

@@ -145,7 +145,9 @@ namespace WallpaperEngine.Content
 			float slotH = StickerBottom - StickerTop;
 			var slotCenter = new Vector2((StickerLeft + StickerRight) * 0.5f, (StickerTop + StickerBottom) * 0.5f);
 			float fit = Math.Min(slotW / Math.Max(1, sticker.Width), slotH / Math.Max(1, sticker.Height));
-			float pulse = 1f - 0.12f * MathF.Abs(MathF.Sin(Main.GlobalTimeWrappedHourly * 2.4f));
+			float pulse = WeLook.LogoPulse
+				? 1f - 0.12f * MathF.Abs(MathF.Sin(Main.GlobalTimeWrappedHourly * 2.4f))
+				: 1f;
 			Vector2 pos = LocalToWorld(center, logo, scale, rotation, slotCenter);
 			spriteBatch.Draw(
 				sticker, pos, null, Color.White * fade, rotation,

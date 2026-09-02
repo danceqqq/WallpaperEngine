@@ -1,3 +1,13 @@
+v0.8.3
+- Client settings grouped into cards with live previews (hub, window chrome, menu buttons, accent)
+- Import your own TTF/OTF menu fonts; width and height sliders; button styles apply to custom fonts too
+
+v0.8.2
+- Change logo: toggle the grow/shrink bounce so the logo stays on screen
+- Music: mute the custom player when Terraria is in the background
+- Client: menu text color, font picker, button outline/plate styles
+- Client: save and load Looks (theme presets). Right-click a look to delete it
+
 v0.8.1
 - Custom menu music keeps playing on Characters and Worlds
 - Custom player actually feeds audio again on the title screen (it could sit at 0:00 after the last music fix)
