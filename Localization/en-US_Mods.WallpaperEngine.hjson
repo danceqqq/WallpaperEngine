@@ -66,6 +66,7 @@ UI: {
 	FxRain: Rain
 	FxBeat: Pulse to music
 	ImportImage: Import image
+	AnimHint: GIF and animated PNG play on the menu. The list shows the first frame.
 	OpenFolder: Open folder
 	VanillaLogo: tModLoader logo
 	HideLogo: Hide logo
@@ -161,6 +162,7 @@ UI: {
 	ToastWidgetOff: Widget removed
 	ToastDiscordId: Paste the server ID in the field — that's it
 	ToastTrackDeleted: Track removed
+	ToastLayerGone: Layer removed
 	ToastCleanOn: Version clutter hidden
 	ToastCleanOff: Version clutter restored
 	Red: Red

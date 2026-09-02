@@ -182,9 +182,10 @@ namespace WallpaperEngine.UI
 				Main.instance.GraphicsDevice.ScissorRectangle = Scissor.Value;
 		}
 
-		internal static void WithLinear(SpriteBatch spriteBatch, Action draw)
+		internal static void WithLinear(SpriteBatch spriteBatch, Action draw, Action beforeDraw = null)
 		{
 			spriteBatch.End();
+			beforeDraw?.Invoke();
 			BeginUi(spriteBatch);
 			draw();
 			spriteBatch.End();

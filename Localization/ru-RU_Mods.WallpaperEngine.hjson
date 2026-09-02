@@ -66,6 +66,7 @@ UI: {
 	FxRain: Дождь
 	FxBeat: Пульс под музыку
 	ImportImage: Импорт картинки
+	AnimHint: GIF и анимированный PNG играют в меню. В списке — первый кадр.
 	OpenFolder: Открыть папку
 	VanillaLogo: Лого tModLoader
 	HideLogo: Скрыть лого
@@ -161,6 +162,7 @@ UI: {
 	ToastWidgetOff: Виджет убран
 	ToastDiscordId: Вставь ID сервера в поле — и готово
 	ToastTrackDeleted: Трек удалён
+	ToastLayerGone: Слой убран
 	ToastCleanOn: Системный текст скрыт
 	ToastCleanOff: Системный текст возвращён
 	Red: Красный

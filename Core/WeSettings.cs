@@ -130,13 +130,32 @@ namespace WallpaperEngine.Core
 			return layer;
 		}
 
-		internal static void RemoveSelectedLayer()
+		internal static void RemoveSelectedLayer() => RemoveLayer(SelectedLayer()?.Id);
+
+		internal static void RemoveLayer(string id)
 		{
-			WeLayerRecord layer = SelectedLayer();
-			if (layer == null)
+			if (string.IsNullOrEmpty(id))
 				return;
-			Current.Layers.RemoveAll(item => item.Id == layer.Id);
-			Current.SelectedLayerId = Current.Layers.Count > 0 ? Current.Layers[^1].Id : "";
+			Current.Layers.RemoveAll(item => item.Id == id);
+			if (Current.SelectedLayerId == id)
+				Current.SelectedLayerId = Current.Layers.Count > 0 ? Current.Layers[^1].Id : "";
+			if (Current.Wallpaper == WallpaperKind.Image) {
+				WeLayerRecord next = null;
+				foreach (WeLayerRecord layer in Current.Layers) {
+					if (layer.Kind == WeLayerKind.Image && !string.IsNullOrEmpty(layer.ArtId)) {
+						next = layer;
+						break;
+					}
+				}
+
+				if (next != null)
+					Current.WallpaperId = next.ArtId;
+				else {
+					Current.Wallpaper = WallpaperKind.Vanilla;
+					Current.WallpaperId = "";
+				}
+			}
+
 			WeSave.Save();
 		}
 

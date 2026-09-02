@@ -9,7 +9,7 @@ namespace WallpaperEngine.Core
 {
 	internal static class WeArt
 	{
-		private static readonly string[] ImageExtensions = { ".png", ".jpg", ".jpeg" };
+		private static readonly string[] ImageExtensions = { ".png", ".jpg", ".jpeg", ".gif", ".apng" };
 		private static readonly Dictionary<string, Texture2D> Cache = new(StringComparer.OrdinalIgnoreCase);
 		private static readonly Dictionary<string, DateTime> Times = new(StringComparer.OrdinalIgnoreCase);
 
@@ -34,13 +34,13 @@ namespace WallpaperEngine.Core
 
 		internal static bool TryGetWallpaper(string id, out Texture2D texture)
 		{
-			texture = TextureOf(WeSave.WallpaperFolder, id, WeSave.Data.Wallpapers);
+			texture = TextureOf(WeSave.WallpaperFolder, id, WeSave.Data.Wallpapers, true);
 			return texture != null;
 		}
 
 		internal static bool TryGetLogo(out Texture2D texture)
 		{
-			texture = TextureOf(WeSave.LogoFolder, WeSave.Data.LogoId, WeSave.Data.Logos);
+			texture = TextureOf(WeSave.LogoFolder, WeSave.Data.LogoId, WeSave.Data.Logos, true);
 			return texture != null;
 		}
 
@@ -48,7 +48,11 @@ namespace WallpaperEngine.Core
 		{
 			if (record == null)
 				return null;
-			return TextureOf(logo ? WeSave.LogoFolder : WeSave.WallpaperFolder, record.Id, logo ? WeSave.Data.Logos : WeSave.Data.Wallpapers);
+			return TextureOf(
+				logo ? WeSave.LogoFolder : WeSave.WallpaperFolder,
+				record.Id,
+				logo ? WeSave.Data.Logos : WeSave.Data.Wallpapers,
+				false);
 		}
 
 		internal static bool TryImportWallpaper()
@@ -108,6 +112,7 @@ namespace WallpaperEngine.Core
 			}
 
 			Times.Remove(path);
+			WeAnim.Drop(path);
 			records.RemoveAll(item => item.Id == record.Id || string.Equals(item.FileName, record.FileName, StringComparison.OrdinalIgnoreCase));
 			if (logo && WeSave.Data.LogoId == record.Id)
 				WeSave.Data.LogoId = "";
@@ -142,6 +147,7 @@ namespace WallpaperEngine.Core
 
 			Cache.Clear();
 			Times.Clear();
+			WeAnim.Unload();
 		}
 
 		private static void SyncFolder(string folder, List<WeArtRecord> records, string prefix)
@@ -210,7 +216,7 @@ namespace WallpaperEngine.Core
 			}
 		}
 
-		private static Texture2D TextureOf(string folder, string id, List<WeArtRecord> records)
+		private static Texture2D TextureOf(string folder, string id, List<WeArtRecord> records, bool motion)
 		{
 			if (string.IsNullOrEmpty(id))
 				return null;
@@ -224,6 +230,12 @@ namespace WallpaperEngine.Core
 				return null;
 
 			DateTime write = File.GetLastWriteTimeUtc(path);
+			if (motion) {
+				Texture2D live = WeAnim.Play(path, write);
+				if (live != null)
+					return live;
+			}
+
 			if (Cache.TryGetValue(path, out Texture2D cached) && cached != null && !cached.IsDisposed &&
 			    Times.TryGetValue(path, out DateTime known) && known == write)
 				return cached;
@@ -238,7 +250,7 @@ namespace WallpaperEngine.Core
 				return tex;
 			}
 			catch {
-				return null;
+				return motion ? null : WeAnim.Play(path, write);
 			}
 		}
 	}

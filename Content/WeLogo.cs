@@ -64,21 +64,24 @@ namespace WallpaperEngine.Content
 			    WeBorrow.TryDrawLogo(spriteBatch, Anchor, Scale, fade, rotation, bounce))
 				return;
 
-			Texture2D tex = CurrentTexture();
-			if (tex == null)
-				return;
-
-			float scale = DrawScale(tex) * bounce;
 			if (WeSave.Data.Logo == LogoKind.Borrowed) {
+				Texture2D borrowed = CurrentTexture();
+				if (borrowed == null)
+					return;
+				float borrowedScale = DrawScale(borrowed) * bounce;
 				WeDraw.WithPoint(spriteBatch, () => {
-					spriteBatch.Draw(tex, Anchor, null, Color.White * fade, rotation, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+					spriteBatch.Draw(borrowed, Anchor, null, Color.White * fade, rotation, borrowed.Size() * 0.5f, borrowedScale, SpriteEffects.None, 0f);
 				});
 				return;
 			}
 
 			WeDraw.WithLinear(spriteBatch, () => {
+				Texture2D tex = CurrentTexture();
+				if (tex == null)
+					return;
+				float scale = DrawScale(tex) * bounce;
 				spriteBatch.Draw(tex, Anchor, null, Color.White * fade, rotation, tex.Size() * 0.5f, scale, SpriteEffects.None, 0f);
-			});
+			}, WeSave.Data.Logo == LogoKind.Custom ? WeAnim.AdvanceActive : null);
 		}
 
 		internal static bool ShouldDrawVanilla(ref Vector2 logoDrawCenter, ref float logoScale)

@@ -61,7 +61,7 @@ namespace WallpaperEngine.Core
 			"Upload a song");
 
 		private static string ShowImage() => ShowDialog(
-			"Images (*.png;*.jpg;*.jpeg)\0*.png;*.jpg;*.jpeg\0PNG\0*.png\0JPEG\0*.jpg;*.jpeg\0",
+			"Images (*.png;*.jpg;*.jpeg;*.gif)\0*.png;*.jpg;*.jpeg;*.gif\0PNG\0*.png\0JPEG\0*.jpg;*.jpeg\0GIF\0*.gif\0",
 			"Upload an image");
 
 		private static string ShowIcon() => ShowDialog(

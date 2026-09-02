@@ -4,7 +4,7 @@ Logo and wallpaper are two different slots. You can grab a sky from one mod and 
 
 [h2]Stuff you can do[/h2]
 [list]
-[*] Your own PNG/JPG wallpapers and logos
+[*] Your own PNG/JPG/GIF wallpapers and logos (animated PNG too)
 [*] Skies and logos from other loaded menu themes (Calamity, Infernum, Fables, Wrath of the Gods, Catalyst, whatever else you have on)
 [*] Layers on top: stars, fog, rain, beat pulse, etc.
 [*] Music player — ogg / mp3 / wav, shuffle, loop, delete a track if you hate it
@@ -22,6 +22,8 @@ Don't dump other mods' crashes in the comments. I can't fix Calamity for you.
 Client-side.
 
 [h2]Changelog[/h2]
+[b]0.8.5[/b] GIFs actually play. Remove layer works (it was putting the image back on the same click).
+[b]0.8.4[/b] GIF and animated PNG work as wallpapers / logos / layers. Gordo asked.
 [b]0.8.3[/b] Client settings are cards now, with previews. You can import fonts for the menu buttons (width, height, outlines / plates still apply).
 [b]0.8.2[/b] Logo bounce can be turned off. Custom music mutes when Terraria isn't focused. Menu text color, button styles, save/load Looks. Right-click a look to delete it.
 [b]0.8.1[/b] Music kept dying on Characters/Worlds and the player could sit at 0:00. Both fixed. Wallpapers center properly. Three built-in logos if you don't want to import anything.

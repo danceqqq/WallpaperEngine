@@ -1,3 +1,10 @@
+v0.8.5
+- GIF / animated PNG actually play on the menu (they were stuck on the first frame after import)
+- Remove layer works; trash on the layer row too. Last image layer falls back to vanilla sky
+
+v0.8.4
+- GIF and animated PNG as wallpapers, logos, and image layers
+
 v0.8.3
 - Client settings grouped into cards with live previews (hub, window chrome, menu buttons, accent)
 - Import your own TTF/OTF menu fonts; width and height sliders; button styles apply to custom fonts too
